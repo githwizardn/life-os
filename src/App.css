@@ -1043,4 +1043,28 @@ body {
   .day-progress {
     margin-bottom: 16px;
   }
+
+  .task {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Label takes full width — pushes badges to next line */
+.task-label {
+  width: 100%;
+  font-size: 13px;
+}
+
+/* Badges align on second line */
+.task-difficulty {
+  font-size: 10px;
+}
+
+.task-xp {
+  font-size: 12px;
+}
+
+.task-track-btn {
+  font-size: 10px;
+}
 }
