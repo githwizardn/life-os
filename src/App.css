@@ -940,7 +940,6 @@ body {
 }
 
 /* ===== MOBILE RESPONSIVE ===== */
-/* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 600px) {
 
   .app {
@@ -1024,10 +1023,6 @@ body {
     font-size: 22px;
   }
 
-  .task-label {
-    font-size: 13px;
-  }
-
   .score-pct {
     font-size: 28px;
   }
@@ -1044,27 +1039,39 @@ body {
     margin-bottom: 16px;
   }
 
+  /* Task row — checkbox + label on line 1, badges on line 2 */
   .task {
-  flex-wrap: wrap;
-  gap: 8px;
-}
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 12px 14px;
+  }
 
-/* Label takes full width — pushes badges to next line */
-.task-label {
-  width: 100%;
-  font-size: 13px;
-}
+  /* Checkbox stays top left */
+  .checkbox {
+    align-self: flex-start;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
 
-/* Badges align on second line */
-.task-difficulty {
-  font-size: 10px;
-}
+  /* Label fills first line next to checkbox */
+  .task-label {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    line-height: 1.4;
+  }
 
-.task-xp {
-  font-size: 12px;
-}
+  /* Badges pushed to second line, indented to align with label */
+  .task-difficulty {
+    font-size: 10px;
+    margin-left: 34px;
+  }
 
-.task-track-btn {
-  font-size: 10px;
-}
+  .task-xp {
+    font-size: 12px;
+  }
+
+  .task-track-btn {
+    font-size: 10px;
+  }
 }
