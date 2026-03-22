@@ -940,20 +940,107 @@ body {
 }
 
 /* ===== MOBILE RESPONSIVE ===== */
+/* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 600px) {
-  .app { padding: 16px 12px 40px; }
-  .header { flex-direction: column; gap: 8px; }
-  .header-right { text-align: left; }
-  .date-big { font-size: 36px; }
-  .score-grid { grid-template-columns: 1fr; }
-  .score-card:last-child:nth-child(odd) { max-width: 100%; grid-column: auto; }
-  .goal-grid { grid-template-columns: 1fr; }
-  .logo { font-size: 32px; }
-  .name-input { font-size: 18px; padding: 14px 16px; }
-  .actions { flex-direction: column; }
-  .actions button { width: 100%; text-align: center; }
-  .modal { padding: 24px 16px; }
-  .modal-title { font-size: 22px; }
-  .task-label { font-size: 13px; }
-  .score-pct { font-size: 28px; }
+
+  .app {
+    padding: 16px 16px 100px;
+  }
+
+  .onboarding {
+    position: fixed;
+    inset: 0;
+    overflow-y: auto;
+    align-items: flex-start;
+    padding: 40px 20px 100px;
+  }
+
+  .onboarding-card {
+    width: 100%;
+    padding-top: 10px;
+  }
+
+  .logo {
+    font-size: 32px;
+  }
+
+  .goal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .goal-grid .goal-btn:last-child:nth-child(3n + 1) {
+    grid-column: auto;
+    width: 100%;
+    margin: 0;
+  }
+
+  .start-btn {
+    margin-bottom: 20px;
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .header-right {
+    text-align: left;
+  }
+
+  .date-big {
+    font-size: 36px;
+  }
+
+  .score-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .score-card:last-child:nth-child(odd) {
+    max-width: 100%;
+    grid-column: auto;
+  }
+
+  .name-input {
+    font-size: 18px;
+    padding: 14px 16px;
+  }
+
+  .actions {
+    flex-direction: column;
+    padding-bottom: 40px;
+  }
+
+  .actions button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .modal {
+    padding: 24px 16px;
+    width: 95%;
+  }
+
+  .modal-title {
+    font-size: 22px;
+  }
+
+  .task-label {
+    font-size: 13px;
+  }
+
+  .score-pct {
+    font-size: 28px;
+  }
+
+  .task-category {
+    margin-bottom: 16px;
+  }
+
+  .xp-section {
+    margin-bottom: 16px;
+  }
+
+  .day-progress {
+    margin-bottom: 16px;
+  }
 }
