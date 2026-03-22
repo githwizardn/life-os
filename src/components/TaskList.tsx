@@ -6,7 +6,7 @@ type Props = {
   tasks: TaskItem[]
   taskState: Record<string, boolean>
   onToggle: (id: string, xp: number) => void
-  onTrack: (task: TaskItem) => void  // ← added
+  onTrack: (task: TaskItem) => void
 }
 
 // --- Helper: capitalize first letter ---
@@ -19,7 +19,7 @@ const DIFFICULTY_LABEL: Record<string, string> = {
   legendary: '⚡ LEGENDARY',
 }
 
-function TaskList({ tasks, taskState, onToggle, onTrack }: Props) {  // ← added onTrack
+function TaskList({ tasks, taskState, onToggle, onTrack }: Props) {
   return (
     <div className="task-section">
 
@@ -30,7 +30,6 @@ function TaskList({ tasks, taskState, onToggle, onTrack }: Props) {  // ← adde
         const doneTasks = categoryTasks.filter(t => taskState[t.id]).length
         const totalTasks = categoryTasks.length
 
-        // Don't render category if no tasks for it today
         if (totalTasks === 0) return null
 
         return (
@@ -69,29 +68,29 @@ function TaskList({ tasks, taskState, onToggle, onTrack }: Props) {  // ← adde
                       {isDone ? '✓' : ''}
                     </div>
 
-                    {/* Task label */}
-                    <div className="task-label">{task.label}</div>
-
-                    {/* Difficulty badge */}
-                    <div className={`task-difficulty ${task.difficulty}`}>
-                      {DIFFICULTY_LABEL[task.difficulty]}
+                    {/* Left side — label only */}
+                    <div className="task-left">
+                      <div className="task-label">{task.label}</div>
                     </div>
 
-                    {/* XP badge */}
-                    <div className="task-xp">+{task.xp} XP</div>
-
-                    {/* Track button — only on legendary tasks */}
-                    {task.difficulty === 'legendary' && (
-                      <button
-                        className="task-track-btn"
-                        onClick={e => {
-                          e.stopPropagation() // prevent toggling the task
-                          onTrack(task)
-                        }}
-                      >
-                        TRACK
-                      </button>
-                    )}
+                    {/* Right side — difficulty, xp, track */}
+                    <div className="task-right">
+                      <div className={`task-difficulty ${task.difficulty}`}>
+                        {DIFFICULTY_LABEL[task.difficulty]}
+                      </div>
+                      <div className="task-xp">+{task.xp} XP</div>
+                      {task.difficulty === 'legendary' && (
+                        <button
+                          className="task-track-btn"
+                          onClick={e => {
+                            e.stopPropagation()
+                            onTrack(task)
+                          }}
+                        >
+                          TRACK
+                        </button>
+                      )}
+                    </div>
 
                   </div>
 

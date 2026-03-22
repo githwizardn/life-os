@@ -5,42 +5,25 @@
   box-sizing: border-box;
 }
 
-/* ===== CSS VARIABLES — colors used everywhere ===== */
 :root {
-  /* Backgrounds — deep navy with clear layer separation */
   --bg: #080818;
   --surface: #0f1030;
   --surface2: #171840;
   --surface3: #202055;
-
-  /* Borders — actually visible now */
   --border: #2e2e60;
   --border2: #404088;
-
-  /* Primary accent — vivid cyan-green, signals completion and go */
   --accent: #00ffaa;
   --accent-dim: rgba(0,255,170,0.15);
-
-  /* Secondary accent — vivid electric purple, signals ambition */
   --accent2: #a855f7;
   --accent2-dim: rgba(168,85,247,0.15);
-
-  /* Tertiary accent — vivid orange, signals urgency and legendary */
   --accent3: #ff7733;
   --accent3-dim: rgba(255,119,51,0.15);
-
-  /* Gold — warm and bright, signals reward and achievement */
   --gold: #ffd700;
   --gold-dim: rgba(255,215,0,0.15);
-
-  /* Danger — clear red-pink, signals penalty and failure */
   --danger: #ff3366;
-
-  /* Text */
   --text: #eeeeff;
   --text-muted: #7878a8;
   --text-mid: #b0b0d0;
-
   --radius: 6px;
 }
 
@@ -53,7 +36,6 @@ body {
   overflow-x: hidden;
 }
 
-/* ===== BACKGROUND GLOW ANIMATION ===== */
 .bg-glow {
   position: fixed;
   inset: 0;
@@ -90,7 +72,6 @@ body {
   to { transform: translate(80px, -60px); }
 }
 
-/* ===== MAIN APP WRAPPER ===== */
 .app {
   position: relative;
   z-index: 1;
@@ -296,10 +277,7 @@ body {
   letter-spacing: 1px;
 }
 
-.xp-label {
-  font-size: 13px;
-  color: var(--text-muted);
-}
+.xp-label { font-size: 13px; color: var(--text-muted); }
 
 .xp-numbers {
   font-size: 15px;
@@ -337,10 +315,7 @@ body {
   pointer-events: none;
 }
 
-.xp-popup.show {
-  opacity: 1;
-  transform: translateY(0);
-}
+.xp-popup.show { opacity: 1; transform: translateY(0); }
 
 /* ===== DAY PROGRESS ===== */
 .day-progress {
@@ -432,9 +407,7 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
-.task-wrapper:last-child {
-  border-bottom: none;
-}
+.task-wrapper:last-child { border-bottom: none; }
 
 .task {
   display: flex;
@@ -446,7 +419,6 @@ body {
 }
 
 .task:hover { background: var(--surface2); }
-
 .task.done { opacity: 0.5; }
 .task.done .task-label { text-decoration: line-through; }
 
@@ -469,18 +441,23 @@ body {
   border-color: var(--accent);
 }
 
-.task-label {
+/* Left side — label only */
+.task-left {
   flex: 1;
+  min-width: 0;
+}
+
+.task-label {
   font-size: 15px;
   color: var(--text);
   line-height: 1.4;
 }
 
-.task-xp {
-  font-size: 12px;
-  color: var(--gold);
-  font-weight: 700;
-  letter-spacing: 1px;
+/* Right side — badges stay together */
+.task-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   flex-shrink: 0;
 }
 
@@ -496,6 +473,14 @@ body {
 .task-difficulty.easy { background: var(--accent-dim); color: var(--accent); }
 .task-difficulty.hard { background: var(--accent2-dim); color: var(--accent2); }
 .task-difficulty.legendary { background: var(--gold-dim); color: var(--gold); }
+
+.task-xp {
+  font-size: 12px;
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
 
 /* ===== PENALTY TEXT ===== */
 .task-penalty {
@@ -729,7 +714,6 @@ body {
 
 .modal-btn:hover { opacity: 0.9; }
 
-
 /* ===== CATEGORY SELECT MODAL ===== */
 .cat-select-grid {
   display: grid;
@@ -756,22 +740,15 @@ body {
   text-align: left;
 }
 
-.cat-select-btn:hover {
-  border-color: var(--border2);
-  color: var(--text);
-}
-
+.cat-select-btn:hover { border-color: var(--border2); color: var(--text); }
 .cat-select-btn.selected {
   border-color: var(--accent);
   background: var(--accent-dim);
   color: var(--accent);
 }
 
-
 /* ===== QUEST TRACKER ===== */
-.quest-section {
-  margin-bottom: 24px;
-}
+.quest-section { margin-bottom: 24px; }
 
 .quest-header {
   display: flex;
@@ -792,10 +769,7 @@ body {
   text-transform: uppercase;
 }
 
-.quest-count {
-  font-size: 12px;
-  color: var(--text-muted);
-}
+.quest-count { font-size: 12px; color: var(--text-muted); }
 
 .quest-card {
   background: var(--surface);
@@ -860,16 +834,9 @@ body {
   font-weight: 700;
 }
 
-.quest-meta {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: 12px;
-}
+.quest-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 12px; }
 
-.quest-actions {
-  display: flex;
-  gap: 10px;
-}
+.quest-actions { display: flex; gap: 10px; }
 
 .quest-checkin-btn {
   flex: 1;
@@ -913,12 +880,9 @@ body {
   transition: all 0.2s;
 }
 
-.quest-abandon-btn:hover {
-  border-color: var(--danger);
-  color: var(--danger);
-}
+.quest-abandon-btn:hover { border-color: var(--danger); color: var(--danger); }
 
-/* ===== TRACK BUTTON ON TASKS ===== */
+/* ===== TRACK BUTTON ===== */
 .task-track-btn {
   padding: 3px 8px;
   background: var(--gold-dim);
@@ -934,17 +898,12 @@ body {
   flex-shrink: 0;
 }
 
-.task-track-btn:hover {
-  background: var(--gold);
-  color: var(--bg);
-}
+.task-track-btn:hover { background: var(--gold); color: var(--bg); }
 
 /* ===== MOBILE RESPONSIVE ===== */
-@media (max-width: 600px) {
+@media (max-width: 700px) {
 
-  .app {
-    padding: 16px 16px 100px;
-  }
+  .app { padding: 16px 16px 100px; }
 
   .onboarding {
     position: fixed;
@@ -954,18 +913,9 @@ body {
     padding: 40px 20px 100px;
   }
 
-  .onboarding-card {
-    width: 100%;
-    padding-top: 10px;
-  }
-
-  .logo {
-    font-size: 32px;
-  }
-
-  .goal-grid {
-    grid-template-columns: 1fr;
-  }
+  .onboarding-card { width: 100%; padding-top: 10px; }
+  .logo { font-size: 32px; }
+  .goal-grid { grid-template-columns: 1fr; }
 
   .goal-grid .goal-btn:last-child:nth-child(3n + 1) {
     grid-column: auto;
@@ -973,105 +923,62 @@ body {
     margin: 0;
   }
 
-  .start-btn {
-    margin-bottom: 20px;
-  }
-
-  .header {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .header-right {
-    text-align: left;
-  }
-
-  .date-big {
-    font-size: 36px;
-  }
-
-  .score-grid {
-    grid-template-columns: 1fr;
-  }
+  .start-btn { margin-bottom: 20px; }
+  .header { flex-direction: column; gap: 8px; }
+  .header-right { text-align: left; }
+  .date-big { font-size: 36px; }
+  .score-grid { grid-template-columns: 1fr; }
 
   .score-card:last-child:nth-child(odd) {
     max-width: 100%;
     grid-column: auto;
   }
 
-  .name-input {
-    font-size: 18px;
-    padding: 14px 16px;
-  }
+  .name-input { font-size: 18px; padding: 14px 16px; }
+  .actions { flex-direction: column; padding-bottom: 40px; }
+  .actions button { width: 100%; text-align: center; }
+  .modal { padding: 24px 16px; width: 95%; }
+  .modal-title { font-size: 22px; }
+  .score-pct { font-size: 28px; }
+  .task-category { margin-bottom: 16px; }
+  .xp-section { margin-bottom: 16px; }
+  .day-progress { margin-bottom: 16px; }
 
-  .actions {
-    flex-direction: column;
-    padding-bottom: 40px;
-  }
-
-  .actions button {
-    width: 100%;
-    text-align: center;
-  }
-
-  .modal {
-    padding: 24px 16px;
-    width: 95%;
-  }
-
-  .modal-title {
-    font-size: 22px;
-  }
-
-  .score-pct {
-    font-size: 28px;
-  }
-
-  .task-category {
-    margin-bottom: 16px;
-  }
-
-  .xp-section {
-    margin-bottom: 16px;
-  }
-
-  .day-progress {
-    margin-bottom: 16px;
-  }
-
-  /* Task row — checkbox + label on line 1, badges on line 2 */
   .task {
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 12px 14px;
-  }
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+}
 
-  /* Checkbox stays top left */
-  .checkbox {
-    align-self: flex-start;
-    margin-top: 2px;
-    flex-shrink: 0;
-  }
+.checkbox {
+  align-self: flex-start;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
 
-  /* Label fills first line next to checkbox */
-  .task-label {
-    flex: 1;
-    min-width: 0;
-    font-size: 13px;
-    line-height: 1.4;
-  }
+.task-left {
+  flex: 1;
+  min-width: 0;
+}
 
-  /* Badges pushed to second line, indented to align with label */
-  .task-difficulty {
-    font-size: 10px;
-    margin-left: 34px;
-  }
+.task-label {
+  font-size: 13px;
+  line-height: 1.4;
+  word-break: break-word;
+}
 
-  .task-xp {
-    font-size: 12px;
-  }
+.task-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: 0;
+}
 
-  .task-track-btn {
-    font-size: 10px;
-  }
+.task-difficulty { font-size: 10px; }
+.task-xp { font-size: 11px; }
+.task-track-btn { font-size: 10px; } 
 }
