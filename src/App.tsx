@@ -42,6 +42,8 @@ export type GlobalData = {
 function App() {
   const [session, setSession] = useState<Session | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [dataLoading, setDataLoading] = useState(true) // <-- Data loading state
+  
   const [user, setUser] = useLocalStorage<User | null>('lifeos-user', null)
   const [taskState, setTaskState] = useLocalStorage<Record<string, boolean>>('lifeos-tasks', {})
   const [globalData, setGlobalData] = useLocalStorage<GlobalData>('lifeos-global', {
@@ -73,44 +75,52 @@ function App() {
     const userId = session.user.id
 
     async function loadAll() {
-      const profile = await loadProfile(userId)
-      if (profile) {
-        setUser({ name: profile.name, goals: profile.goals, joined: profile.joined })
+      // <--  try/catch block for safe network requests
+      try {
+        const profile = await loadProfile(userId)
+        if (profile) {
+          setUser({ name: profile.name, goals: profile.goals, joined: profile.joined })
+        }
+
+        const global = await loadGlobalData(userId)
+        if (global) {
+          setGlobalData({
+            totalXP: global.total_xp,
+            streak: global.streak,
+            bestStreak: global.best_streak,
+            lastDay: global.last_day,
+          })
+          setResetCount(global.reset_count)
+          setActiveCategories(global.active_categories || [])
+        }
+
+        const tasks = await loadTaskState(userId)
+        setTaskState(tasks)
+
+        const notes = await loadNotes(userId)
+        setNotes(notes)
+
+        const history = await loadNotesHistory(userId)
+        setNotesHistory(history)
+
+        const quests = await loadQuests(userId)
+        setQuests(quests.map((q: any) => ({
+          id: q.id,
+          label: q.label,
+          category: q.category,
+          xp: q.xp,
+          startDate: q.start_date,
+          lastCheckin: q.last_checkin,
+          daysCompleted: q.days_completed,
+          totalDays: q.total_days,
+          completed: q.completed,
+        })))
+      } catch (error) {
+        console.error("Failed to sync with database:", error)
+      } finally {
+        // <-- Unlock the UI once downloading finishes (or fails)
+        setDataLoading(false) 
       }
-
-      const global = await loadGlobalData(userId)
-      if (global) {
-        setGlobalData({
-          totalXP: global.total_xp,
-          streak: global.streak,
-          bestStreak: global.best_streak,
-          lastDay: global.last_day,
-        })
-        setResetCount(global.reset_count)
-        setActiveCategories(global.active_categories || [])
-      }
-
-      const tasks = await loadTaskState(userId)
-      setTaskState(tasks)
-
-      const notes = await loadNotes(userId)
-      setNotes(notes)
-
-      const history = await loadNotesHistory(userId)
-      setNotesHistory(history)
-
-      const quests = await loadQuests(userId)
-      setQuests(quests.map((q: any) => ({
-        id: q.id,
-        label: q.label,
-        category: q.category,
-        xp: q.xp,
-        startDate: q.start_date,
-        lastCheckin: q.last_checkin,
-        daysCompleted: q.days_completed,
-        totalDays: q.total_days,
-        completed: q.completed,
-      })))
     }
 
     loadAll()
@@ -248,10 +258,10 @@ function App() {
     setNotesHistory(history)
   }
 
-  // --- Delete a note history entry ---
   const handleDeleteHistory = async (id: string) => {
     if (confirm('Delete this note entry? This cannot be undone.')) {
-      await deleteNotesHistory(id)
+      // --- FIX: Now passing the user ID for security! ---
+      await deleteNotesHistory(session!.user.id, id) 
       const history = await loadNotesHistory(session!.user.id)
       setNotesHistory(history)
     }
@@ -265,12 +275,13 @@ function App() {
     }
   }
 
-  if (authLoading) {
+  //  Blocks the UI if auth is loading OR if the user is logged in but data is still downloading
+  if (authLoading || (session && dataLoading)) {
     return (
       <div className="onboarding">
         <div className="onboarding-card">
           <div className="logo">LIFE OS</div>
-          <div className="sub">LOADING...</div>
+          <div className="sub">{authLoading ? 'AUTHENTICATING...' : 'SYNCING DATA...'}</div>
         </div>
       </div>
     )

@@ -21,7 +21,11 @@ function QuestTracker({ quests, onCheckin, onAbandon }: Props) {
 
       {/* Quest list */}
       {quests.map(quest => {
-        const pct = Math.round(quest.daysCompleted / quest.totalDays * 100)
+        // --- FIX: Safe math! Prevents division by zero and caps max width at 100% ---
+        const safeTotalDays = quest.totalDays > 0 ? quest.totalDays : 1
+        const rawPct = Math.round((quest.daysCompleted / safeTotalDays) * 100)
+        const pct = Math.min(rawPct, 100) 
+
         const checkedInToday = quest.lastCheckin === today
         const { icon } = CATEGORY_INFO[quest.category] || { icon: '📋' }
 

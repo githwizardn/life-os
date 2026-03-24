@@ -1135,14 +1135,13 @@ autonomy: [
 
 
 export function getDailyTasks(resetCount: number = 0): TaskItem[] {
-
   const dateStr = new Date().toDateString()
   const tasks: TaskItem[] = []
 
   CATEGORIES.forEach(category => {
     const pool = ALL_TASKS[category]
+    if (!pool) return
 
-    // Add resetCount to seed — different tasks each reset
     const seed = dateStr + category + resetCount
     const seedNum = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
 
@@ -1160,14 +1159,20 @@ export function getDailyTasks(resetCount: number = 0): TaskItem[] {
       easy[0], easy[1], hard[0], hard[1], legendary[0],
     ].filter(Boolean)
 
+    // Fallback if difficulty counts aren't met
     while (selected.length < 5 && shuffled.length > selected.length) {
-      const next = shuffled[selected.length]
-      if (!selected.includes(next)) selected.push(next)
+      const next = shuffled.find(t => !selected.includes(t))
+      if (next) selected.push(next)
+      else break
     }
 
-    selected.forEach((task, i) => {
+    selected.forEach((task) => {
+      // FIX: Generate a unique ID based on the label 
+      // This prevents state "ghosting" between different tasks on different days
+      const taskHash = task.label.substring(0, 8).replace(/\s/g, '_').toLowerCase()
+      
       tasks.push({
-        id: `${category}-${i}`,
+        id: `${category}-${taskHash}`, 
         category,
         label: task.label,
         penalty: task.penalty,

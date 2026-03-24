@@ -82,6 +82,9 @@ function Notes({ notes, setNotes, onSave, onDeleteHistory, history }: Props) {
     a.href = URL.createObjectURL(blob)
     a.download = `lifeos-notes-${new Date(entry.saved_at).toISOString().slice(0, 10)}.txt`
     a.click()
+    
+    // --- FIX 1: Prevent memory leak by destroying the URL after clicking ---
+    URL.revokeObjectURL(a.href) 
   }
 
   return (
@@ -181,7 +184,10 @@ function Notes({ notes, setNotes, onSave, onDeleteHistory, history }: Props) {
                   value ? (
                     <div key={key} className="history-field">
                       <div className="history-label">{FIELD_LABELS[key] || key}</div>
-                      <div className="history-value">{value as string}</div>
+                      {/* --- FIX 2: whiteSpace 'pre-wrap' keeps line breaks intact! --- */}
+                      <div className="history-value" style={{ whiteSpace: 'pre-wrap' }}>
+                        {value as string}
+                      </div>
                     </div>
                   ) : null
                 )}

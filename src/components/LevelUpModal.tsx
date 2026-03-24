@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+
 // --- Props ---
 type Props = {
   level: { lvl: number; name: string }
@@ -21,20 +23,35 @@ function LevelUpModal({ level, onClose }: Props) {
   // Get message for this level, fallback to generic message
   const message = LEVEL_MESSAGES[level.lvl] || "Keep going. Every day matters."
 
+  // --- NEW: Close on Escape key ---
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   return (
     <>
       {/* Dark overlay behind the modal */}
-      {/* Clicking overlay also closes the modal */}
-      <div className="modal-overlay" onClick={onClose} />
+      <div className="modal-overlay" onClick={onClose} aria-hidden="true" />
 
       {/* Modal box */}
-      <div className="modal">
+      <div 
+        className="modal" 
+        role="dialog" 
+        aria-modal="true" 
+        aria-labelledby="modal-title"
+      >
 
         {/* Animated star */}
-        <div className="modal-star">⭐</div>
+        <div className="modal-star" aria-hidden="true">⭐</div>
 
         {/* Level up title */}
-        <div className="modal-title">LEVEL UP!</div>
+        <div className="modal-title" id="modal-title">LEVEL UP!</div>
 
         {/* New level info */}
         <div className="modal-level">
@@ -45,7 +62,7 @@ function LevelUpModal({ level, onClose }: Props) {
         <div className="modal-message">{message}</div>
 
         {/* Close button */}
-        <button className="modal-btn" onClick={onClose}>
+        <button className="modal-btn" onClick={onClose} autoFocus>
           KEEP GOING →
         </button>
 

@@ -19,15 +19,20 @@ const COLORS: Record<string, string> = {
 }
 
 // --- Icons ---
+// FIX 1: Added the missing icons!
 const ICONS: Record<string, string> = {
-  body:   '💪',
-  mind:   '🧠',
-  growth: '📈',
-  joy:    '🎉',
+  body:       '💪',
+  mind:       '🧠',
+  mastery:    '🥷',
+  autonomy:   '💰',
+  growth:     '📈',
+  connection: '🤝',
+  joy:        '🎉',
 }
 
 // --- Capitalize helper ---
-const cap = (s: string) => s[0].toUpperCase() + s.slice(1)
+// FIX 2: Crash-proofed the string manipulation
+const cap = (s: string) => s ? s[0].toUpperCase() + s.slice(1) : ''
 
 function ScoreCards({ tasks, taskState }: Props) {
   return (
@@ -36,14 +41,16 @@ function ScoreCards({ tasks, taskState }: Props) {
       {CATEGORIES.map(category => {
         // Get tasks for this category
         const categoryTasks = tasks.filter(t => t.category === category)
+        const total = categoryTasks.length
+
+        // FIX 3: Hide the card completely if there are no tasks for this category today
+        if (total === 0) return null
 
         // Count completed tasks
         const done = categoryTasks.filter(t => taskState[t.id]).length
-        const total = categoryTasks.length
 
-        // Calculate percentage
-        // e.g. 2 done out of 4 total = 50%
-        const pct = total === 0 ? 0 : Math.round(done / total * 100)
+        // Calculate percentage (Safe math!)
+        const pct = Math.round((done / total) * 100)
 
         // Is this category fully complete?
         const isComplete = pct === 100
@@ -55,7 +62,7 @@ function ScoreCards({ tasks, taskState }: Props) {
           >
             {/* Icon + title */}
             <div className="score-header">
-              <span className="score-icon">{ICONS[category]}</span>
+              <span className="score-icon">{ICONS[category] || '🎯'}</span>
               <span className="score-title">{cap(category)}</span>
             </div>
 

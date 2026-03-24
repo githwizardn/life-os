@@ -27,6 +27,11 @@ function getDateParts() {
 function Header({ user }: Props) {
   const { day, monthYear } = getDateParts()
 
+  // Safely split the name into the first word and the rest
+  const nameParts = user.name.trim().split(' ')
+  const firstName = nameParts[0].toUpperCase()
+  const restOfName = nameParts.slice(1).join(' ').toUpperCase()
+
   return (
     <div className="header">
 
@@ -34,8 +39,9 @@ function Header({ user }: Props) {
       <div className="header-left">
         <div className="greeting">{getGreeting()}</div>
         <div className="name">
-          {/* Split name so we can color the first word */}
-          <span>{user.name.toUpperCase()}</span>
+          {/* Now it actually splits the name! */}
+          <span style={{ color: 'var(--accent)' }}>{firstName}</span>
+          {restOfName && <span> {restOfName}</span>}
         </div>
       </div>
 

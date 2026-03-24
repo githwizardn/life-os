@@ -4,18 +4,27 @@ import { supabase } from '../lib/supabase'
 function Auth() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
-  const [googleLoading, setGoogleLoading] = useState(false) // New state for Google button
+  const [googleLoading, setGoogleLoading] = useState(false) 
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
 
   // Email Magic Link Login
   const handleLogin = async () => {
-    if (!email.trim()) return
+    const trimmedEmail = email.trim()
+    if (!trimmedEmail) return
+
+    // NEW: Instant client-side validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(trimmedEmail)) {
+      setError('Please enter a valid email address.')
+      return
+    }
+
     setLoading(true)
     setError('')
 
     const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
+      email: trimmedEmail,
       options: {
         emailRedirectTo: window.location.origin
       }
@@ -45,7 +54,6 @@ function Auth() {
       setError(error.message)
       setGoogleLoading(false)
     }
-    // Note: We don't set loading to false on success because the browser will instantly redirect to Google
   }
 
   if (sent) {
