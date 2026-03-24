@@ -61,7 +61,7 @@ The system is architected with a "Security-First" mindset, particularly at the d
 ### Installation
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/githwizardn/life-os.git](https://github.com/githwizardn/life-os.git)
+    git clone https://github.com/githwizardn/life-os.git
     ```
 2.  **Install dependencies:**
     ```bash
