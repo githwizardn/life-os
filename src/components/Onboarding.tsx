@@ -1,7 +1,6 @@
 import { useState } from 'react'
 
 // --- TypeScript: define what props this component receives ---
-// onStart is a function that takes name and goals, returns nothing (void)
 type Props = {
   onStart: (name: string, goals: string[]) => void
 }
@@ -25,15 +24,16 @@ function Onboarding({ onStart }: Props) {
   // Toggle a goal on/off when clicked
   const toggleGoal = (id: string) => {
     setSelectedGoals(prev =>
-      // If already selected → remove it
-      // If not selected → add it
       prev.includes(id) ? prev.filter(g => g !== id) : [...prev, id]
     )
   }
 
+  // --- NEW: Check if form is valid ---
+  const isFormValid = name.trim().length > 0 && selectedGoals.length > 0
+
   // Called when user clicks START
   const handleStart = () => {
-    if (!name.trim()) return // do nothing if name is empty
+    if (!isFormValid) return 
     onStart(name.trim(), selectedGoals)
   }
 
@@ -53,13 +53,13 @@ function Onboarding({ onStart }: Props) {
           placeholder="YOUR NAME"
           value={name}
           onChange={e => setName(e.target.value)}
-          // Allow pressing Enter to start
-          onKeyDown={e => e.key === 'Enter' && handleStart()}
+          // Allow pressing Enter to start ONLY if valid
+          onKeyDown={e => e.key === 'Enter' && isFormValid && handleStart()}
         />
 
         {/* Goal selection */}
         <div className="question">What are you working on?</div>
-        <div className="hint">Pick as many as you want.</div>
+        <div className="hint">Pick as many as you want (select at least one).</div>
         <div className="goal-grid">
           {GOAL_OPTIONS.map(goal => (
             <button
@@ -73,7 +73,15 @@ function Onboarding({ onStart }: Props) {
         </div>
 
         {/* Start button */}
-        <button className="start-btn" onClick={handleStart}>
+        <button 
+          className="start-btn" 
+          onClick={handleStart}
+          disabled={!isFormValid}
+          style={{
+            opacity: isFormValid ? 1 : 0.5,
+            cursor: isFormValid ? 'pointer' : 'not-allowed'
+          }}
+        >
           INITIALIZE SYSTEM →
         </button>
 

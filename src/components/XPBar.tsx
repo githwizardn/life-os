@@ -13,12 +13,11 @@ function XPBar({ globalData, getLevelData }: Props) {
   const [popupText, setPopupText] = useState('')
 
   // useRef stores the previous XP value WITHOUT causing re-renders
-  // Unlike useState, changing a ref doesn't trigger re-render
-  // Perfect for "remembering" a previous value
   const prevXPRef = useRef(globalData.totalXP)
 
   useEffect(() => {
     const prevXP = prevXPRef.current
+    let timeoutId: ReturnType<typeof setTimeout>
 
     // Only show popup if XP actually increased
     if (globalData.totalXP > prevXP) {
@@ -26,12 +25,20 @@ function XPBar({ globalData, getLevelData }: Props) {
       // Update popup text and show it
       setPopupText(`+${gained} XP`)
       setShowPopup(true)
-      setTimeout(() => setShowPopup(false), 1800)
+      
+      // Assign the timeout to a variable
+      timeoutId = setTimeout(() => setShowPopup(false), 1800)
     }
 
     // Update the ref AFTER checking
-    // ref update doesn't cause re-render ✅
     prevXPRef.current = globalData.totalXP
+
+    // --- FIX: Cleanup function ---
+    // If the user gains XP again before 1.8s is up, this cancels the old timer
+    // so the popup doesn't glitch out and disappear too early!
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+    }
   }, [globalData.totalXP])
 
   // Get current level info

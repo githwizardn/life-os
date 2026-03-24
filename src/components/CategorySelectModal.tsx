@@ -55,7 +55,13 @@ function CategorySelectModal({ current, onConfirm, onCancel }: Props) {
         <button
           className="modal-btn"
           onClick={handleConfirm}
-          style={{ width: '100%', marginTop: '16px' }}
+          disabled={selected.length === 0}
+          style={{ 
+            width: '100%', 
+            marginTop: '16px',
+            opacity: selected.length === 0 ? 0.5 : 1, // Visually show it's disabled
+            cursor: selected.length === 0 ? 'not-allowed' : 'pointer'
+          }}
         >
           START DAY → ({selected.length} categories)
         </button>
