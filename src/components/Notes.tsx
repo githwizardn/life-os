@@ -1,11 +1,19 @@
-// --- Props ---
+import { useState } from 'react'
+
+type NoteEntry = {
+  id: string
+  data: Record<string, string>
+  saved_at: string
+}
+
 type Props = {
   notes: Record<string, string>
   setNotes: (notes: Record<string, string>) => void
+  onSave: () => void
+  onDeleteHistory: (id: string) => void
+  history: NoteEntry[]
 }
 
-// --- Note fields definition ---
-// Each field has an id (used as key in storage) and a placeholder
 const DAILY_FIELDS = [
   { id: 'n1', placeholder: "Today's thoughts & intentions..." },
   { id: 'n2', placeholder: "What am I building toward?" },
@@ -20,59 +28,74 @@ const WEEKLY_FIELDS = [
   { id: 'rq4', placeholder: "How did I feel overall?" },
 ]
 
-function Notes({ notes, setNotes }: Props) {
+const FIELD_LABELS: Record<string, string> = {
+  n1: "Thoughts",
+  n2: "Building toward",
+  n3: "Energy & mood",
+  n4: "Honest truth",
+  rq1: "What worked",
+  rq2: "What didn't",
+  rq3: "One change",
+  rq4: "How I felt",
+}
 
-  // Called every time user types in any textarea
-  // id = which field changed, value = new text
+function Notes({ notes, setNotes, onSave, onDeleteHistory, history }: Props) {
+  const [showHistory, setShowHistory] = useState(false)
+  const [saved, setSaved] = useState(false)
+
   const handleChange = (id: string, value: string) => {
-    // Spread existing notes, update only the changed field
-    // e.g. { n1: 'old', n2: 'old' } → { n1: 'new', n2: 'old' }
     setNotes({ ...notes, [id]: value })
   }
 
-  // Export notes as a .txt file
-  const handleExport = () => {
+  const handleSave = () => {
+    onSave()
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  // Download a single history entry as .txt
+  const handleDownload = (entry: NoteEntry) => {
+    const date = new Date(entry.saved_at).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    })
+
     const lines = [
-      'LIFE OS — Notes Export',
-      `Date: ${new Date().toLocaleDateString()}`,
+      'LIFE OS — Notes',
+      `Saved: ${date}`,
       '',
       '=== DAILY NOTES ===',
-      `Thoughts: ${notes.n1 || '(empty)'}`,
-      `Building toward: ${notes.n2 || '(empty)'}`,
-      `Energy & mood: ${notes.n3 || '(empty)'}`,
-      `Honest truth: ${notes.n4 || '(empty)'}`,
+      `Thoughts: ${entry.data.n1 || '(empty)'}`,
+      `Building toward: ${entry.data.n2 || '(empty)'}`,
+      `Energy & mood: ${entry.data.n3 || '(empty)'}`,
+      `Honest truth: ${entry.data.n4 || '(empty)'}`,
       '',
       '=== WEEKLY REVIEW ===',
-      `What worked: ${notes.rq1 || '(empty)'}`,
-      `What didn't: ${notes.rq2 || '(empty)'}`,
-      `One change: ${notes.rq3 || '(empty)'}`,
-      `How I felt: ${notes.rq4 || '(empty)'}`,
+      `What worked: ${entry.data.rq1 || '(empty)'}`,
+      `What didn't: ${entry.data.rq2 || '(empty)'}`,
+      `One change: ${entry.data.rq3 || '(empty)'}`,
+      `How I felt: ${entry.data.rq4 || '(empty)'}`,
     ]
 
-    // Create a text file and trigger download
     const blob = new Blob([lines.join('\n')], { type: 'text/plain' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
-    a.download = `lifeos-notes-${new Date().toISOString().slice(0, 10)}.txt`
+    a.download = `lifeos-notes-${new Date(entry.saved_at).toISOString().slice(0, 10)}.txt`
     a.click()
   }
 
   return (
     <div className="notes-section">
 
-      {/* Tabs — Daily and Weekly */}
       {/* Daily Notes */}
       <div className="notes-group">
         <div className="notes-title">📓 Daily Notes</div>
-
         {DAILY_FIELDS.map(field => (
           <textarea
             key={field.id}
             className="note-area"
             placeholder={field.placeholder}
-            // Get saved value from notes object, fallback to empty string
             value={notes[field.id] || ''}
-            // Update notes when user types
             onChange={e => handleChange(field.id, e.target.value)}
           />
         ))}
@@ -81,7 +104,6 @@ function Notes({ notes, setNotes }: Props) {
       {/* Weekly Review */}
       <div className="notes-group">
         <div className="notes-title">📅 Weekly Review</div>
-
         {WEEKLY_FIELDS.map(field => (
           <textarea
             key={field.id}
@@ -93,10 +115,82 @@ function Notes({ notes, setNotes }: Props) {
         ))}
       </div>
 
-      {/* Export button */}
-      <button className="export-btn" onClick={handleExport}>
-        📥 Export Notes
-      </button>
+      {/* Action buttons */}
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button className="export-btn" onClick={handleSave} style={{ flex: 1 }}>
+          {saved ? '✓ SAVED!' : '💾 SAVE NOTES'}
+        </button>
+        <button
+          className="export-btn"
+          onClick={() => setShowHistory(!showHistory)}
+          style={{ flex: 1 }}
+        >
+          {showHistory ? 'HIDE HISTORY' : `📚 HISTORY (${history.length})`}
+        </button>
+      </div>
+
+      {/* Notes History */}
+      {showHistory && (
+        <div className="notes-history">
+          <div className="notes-title" style={{ marginTop: '20px' }}>
+            📚 SAVED NOTES HISTORY
+          </div>
+
+          {history.length === 0 ? (
+            <div style={{ color: 'var(--text-muted)', fontSize: '13px', padding: '12px 0' }}>
+              No saved notes yet. Click Save Notes to create your first entry.
+            </div>
+          ) : (
+            history.map(entry => (
+              <div key={entry.id} className="history-entry">
+
+                {/* Header row — date + buttons */}
+                <div className="history-header">
+                  <div className="history-date">
+                    {new Date(entry.saved_at).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </div>
+                  <div className="history-actions">
+                    {/* Download button */}
+                    <button
+                      className="history-btn download"
+                      onClick={() => handleDownload(entry)}
+                      title="Download as .txt"
+                    >
+                      ⬇ DOWNLOAD
+                    </button>
+                    {/* Delete button */}
+                    <button
+                      className="history-btn delete"
+                      onClick={() => onDeleteHistory(entry.id)}
+                      title="Delete this entry"
+                    >
+                      🗑 DELETE
+                    </button>
+                  </div>
+                </div>
+
+                {/* Note fields */}
+                {Object.entries(entry.data).map(([key, value]) =>
+                  value ? (
+                    <div key={key} className="history-field">
+                      <div className="history-label">{FIELD_LABELS[key] || key}</div>
+                      <div className="history-value">{value as string}</div>
+                    </div>
+                  ) : null
+                )}
+
+              </div>
+            ))
+          )}
+        </div>
+      )}
 
     </div>
   )
