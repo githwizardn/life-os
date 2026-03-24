@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import useLocalStorage from './hooks/useLocalStorage'
 import { getDailyTasks, LEVELS } from './data/tasks'
 import type { TaskItem, Quest } from './data/tasks'
+import { supabase } from './lib/supabase'
+import type { Session } from '@supabase/supabase-js'
+import Auth from './components/Auth'
 import Onboarding from './components/Onboarding'
 import Header from './components/Header'
 import XPBar from './components/XPBar'
@@ -12,6 +15,15 @@ import Notes from './components/Notes'
 import LevelUpModal from './components/LevelUpModal'
 import CategorySelectModal from './components/CategorySelectModal'
 import QuestTracker from './components/QuestTracker'
+import {
+  loadProfile, saveProfile,
+  loadGlobalData, saveGlobalData,
+  loadTaskState, saveTaskState,
+  loadNotes, saveNotes,
+  loadQuests, saveQuest, deleteQuest,
+  saveNotesHistory, loadNotesHistory,
+  deleteNotesHistory
+} from './lib/db'
 import './App.css'
 
 export type User = {
@@ -28,6 +40,8 @@ export type GlobalData = {
 }
 
 function App() {
+  const [session, setSession] = useState<Session | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
   const [user, setUser] = useLocalStorage<User | null>('lifeos-user', null)
   const [taskState, setTaskState] = useLocalStorage<Record<string, boolean>>('lifeos-tasks', {})
   const [globalData, setGlobalData] = useLocalStorage<GlobalData>('lifeos-global', {
@@ -36,18 +50,75 @@ function App() {
   const [notes, setNotes] = useLocalStorage<Record<string, string>>('lifeos-notes', {})
   const [resetCount, setResetCount] = useLocalStorage<number>('lifeos-reset-count', 0)
   const [activeCategories, setActiveCategories] = useLocalStorage<string[]>('lifeos-active-categories', [])
-
-  // --- Quests ---
   const [quests, setQuests] = useLocalStorage<Quest[]>('lifeos-quests', [])
-
   const [levelUpData, setLevelUpData] = useState<{ lvl: number; name: string } | null>(null)
   const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [notesHistory, setNotesHistory] = useState<any[]>([])
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setAuthLoading(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => { setSession(session) }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    if (!session) return
+    const userId = session.user.id
+
+    async function loadAll() {
+      const profile = await loadProfile(userId)
+      if (profile) {
+        setUser({ name: profile.name, goals: profile.goals, joined: profile.joined })
+      }
+
+      const global = await loadGlobalData(userId)
+      if (global) {
+        setGlobalData({
+          totalXP: global.total_xp,
+          streak: global.streak,
+          bestStreak: global.best_streak,
+          lastDay: global.last_day,
+        })
+        setResetCount(global.reset_count)
+        setActiveCategories(global.active_categories || [])
+      }
+
+      const tasks = await loadTaskState(userId)
+      setTaskState(tasks)
+
+      const notes = await loadNotes(userId)
+      setNotes(notes)
+
+      const history = await loadNotesHistory(userId)
+      setNotesHistory(history)
+
+      const quests = await loadQuests(userId)
+      setQuests(quests.map((q: any) => ({
+        id: q.id,
+        label: q.label,
+        category: q.category,
+        xp: q.xp,
+        startDate: q.start_date,
+        lastCheckin: q.last_checkin,
+        daysCompleted: q.days_completed,
+        totalDays: q.total_days,
+        completed: q.completed,
+      })))
+    }
+
+    loadAll()
+  }, [session])
 
   const allTasks: TaskItem[] = getDailyTasks(resetCount)
   const tasks = allTasks.filter(t => {
-    const categories = activeCategories.length > 0
-      ? activeCategories
-      : user?.goals ?? []
+    const categories = activeCategories.length > 0 ? activeCategories : user?.goals ?? []
     return categories.includes(t.category)
   })
 
@@ -61,39 +132,40 @@ function App() {
   }
 
   const handleStart = (name: string, goals: string[]) => {
-    setUser({ name, goals, joined: today() })
+    const newUser = { name, goals, joined: today() }
+    setUser(newUser)
     setActiveCategories(goals)
+    if (session) {
+      saveProfile(session.user.id, newUser)
+      saveGlobalData(session.user.id, globalData, resetCount, goals)
+    }
   }
 
   const handleToggle = (taskId: string, xp: number) => {
     const wasChecked = taskState[taskId]
     const newState = { ...taskState, [taskId]: !wasChecked }
     setTaskState(newState)
+    if (session) saveTaskState(session.user.id, newState)
 
     if (!wasChecked) {
       const prevLevel = getLevelData(globalData.totalXP)
       const newXP = globalData.totalXP + xp
       const newLevel = getLevelData(newXP)
-      setGlobalData({ ...globalData, totalXP: newXP })
-      if (newLevel.lvl > prevLevel.lvl) {
-        setTimeout(() => setLevelUpData(newLevel), 600)
-      }
+      const newGlobal = { ...globalData, totalXP: newXP }
+      setGlobalData(newGlobal)
+      if (session) saveGlobalData(session.user.id, newGlobal, resetCount, activeCategories)
+      if (newLevel.lvl > prevLevel.lvl) setTimeout(() => setLevelUpData(newLevel), 600)
     } else {
-      setGlobalData({
-        ...globalData,
-        totalXP: Math.max(0, globalData.totalXP - xp)
-      })
+      const newGlobal = { ...globalData, totalXP: Math.max(0, globalData.totalXP - xp) }
+      setGlobalData(newGlobal)
+      if (session) saveGlobalData(session.user.id, newGlobal, resetCount, activeCategories)
     }
   }
 
-  // --- Add a task as a tracked quest ---
   const handleTrackQuest = (task: TaskItem) => {
-    // Don't add duplicates
     const alreadyTracked = quests.some(q => q.label === task.label && !q.completed)
     if (alreadyTracked) return
 
-    // Try to detect how many days from the task label
-    // e.g. "7 days", "30 days", "30-day"
     const dayMatch = task.label.match(/(\d+)[\s-]day/)
     const totalDays = dayMatch ? parseInt(dayMatch[1]) : 7
 
@@ -110,68 +182,102 @@ function App() {
     }
 
     setQuests([...quests, newQuest])
+    if (session) saveQuest(session.user.id, newQuest)
   }
 
-  // --- Check in on a quest for today ---
   const handleQuestCheckin = (questId: string) => {
     const todayStr = today()
-    setQuests(quests.map(q => {
+    const updatedQuests = quests.map(q => {
       if (q.id !== questId) return q
-      // Already checked in today
       if (q.lastCheckin === todayStr) return q
 
       const newDays = q.daysCompleted + 1
       const isComplete = newDays >= q.totalDays
 
-      // Award XP on completion
       if (isComplete) {
         const newXP = globalData.totalXP + q.xp
         const prevLevel = getLevelData(globalData.totalXP)
         const newLevel = getLevelData(newXP)
-        setGlobalData({ ...globalData, totalXP: newXP })
-        if (newLevel.lvl > prevLevel.lvl) {
-          setTimeout(() => setLevelUpData(newLevel), 600)
-        }
+        const newGlobal = { ...globalData, totalXP: newXP }
+        setGlobalData(newGlobal)
+        if (session) saveGlobalData(session.user.id, newGlobal, resetCount, activeCategories)
+        if (newLevel.lvl > prevLevel.lvl) setTimeout(() => setLevelUpData(newLevel), 600)
       }
 
-      return {
-        ...q,
-        daysCompleted: newDays,
-        lastCheckin: todayStr,
-        completed: isComplete,
-      }
-    }))
-  }
+      return { ...q, daysCompleted: newDays, lastCheckin: todayStr, completed: isComplete }
+    })
 
-  // --- Abandon a quest ---
-  const handleAbandonQuest = (questId: string) => {
-    if (confirm('Abandon this quest? Progress will be lost.')) {
-      setQuests(quests.filter(q => q.id !== questId))
+    setQuests(updatedQuests)
+    if (session) {
+      const updated = updatedQuests.find(q => q.id === questId)
+      if (updated) saveQuest(session.user.id, updated)
     }
   }
 
-  const handleResetDay = () => {
-    setShowCategoryModal(true)
+  const handleAbandonQuest = (questId: string) => {
+    if (confirm('Abandon this quest? Progress will be lost.')) {
+      setQuests(quests.filter(q => q.id !== questId))
+      if (session) deleteQuest(session.user.id, questId)
+    }
   }
 
+  const handleResetDay = () => setShowCategoryModal(true)
+
   const handleConfirmReset = (selectedCategories: string[]) => {
+    const newResetCount = resetCount + 1
     setTaskState({})
-    setResetCount(resetCount + 1)
+    setResetCount(newResetCount)
     setActiveCategories(selectedCategories)
     setShowCategoryModal(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (session) {
+      saveTaskState(session.user.id, {})
+      saveGlobalData(session.user.id, globalData, newResetCount, selectedCategories)
+    }
+  }
+
+  const handleSetNotes = (newNotes: Record<string, string>) => {
+    setNotes(newNotes)
+    if (session) saveNotes(session.user.id, newNotes)
+  }
+
+  const handleSaveNotes = async () => {
+    if (!session) return
+    await saveNotesHistory(session.user.id, notes)
+    const history = await loadNotesHistory(session.user.id)
+    setNotesHistory(history)
+  }
+
+  // --- Delete a note history entry ---
+  const handleDeleteHistory = async (id: string) => {
+    if (confirm('Delete this note entry? This cannot be undone.')) {
+      await deleteNotesHistory(id)
+      const history = await loadNotesHistory(session!.user.id)
+      setNotesHistory(history)
+    }
   }
 
   const handleResetAll = () => {
     if (confirm('Reset EVERYTHING? This cannot be undone.')) {
+      if (session) supabase.auth.signOut()
       localStorage.clear()
       window.location.reload()
     }
   }
 
-  if (!user) {
-    return <Onboarding onStart={handleStart} />
+  if (authLoading) {
+    return (
+      <div className="onboarding">
+        <div className="onboarding-card">
+          <div className="logo">LIFE OS</div>
+          <div className="sub">LOADING...</div>
+        </div>
+      </div>
+    )
   }
+
+  if (!session) return <Auth />
+  if (!user) return <Onboarding onStart={handleStart} />
 
   return (
     <div className="app">
@@ -186,7 +292,6 @@ function App() {
         onTrack={handleTrackQuest}
       />
 
-      {/* Quest tracker — only shown if there are active quests */}
       {quests.filter(q => !q.completed).length > 0 && (
         <QuestTracker
           quests={quests.filter(q => !q.completed)}
@@ -196,7 +301,15 @@ function App() {
       )}
 
       <ScoreCards tasks={tasks} taskState={taskState} />
-      <Notes notes={notes} setNotes={setNotes} />
+
+      <Notes
+        notes={notes}
+        setNotes={handleSetNotes}
+        onSave={handleSaveNotes}
+        onDeleteHistory={handleDeleteHistory}
+        history={notesHistory}
+      />
+
       <div className="actions">
         <button onClick={handleResetDay}>Reset Day</button>
         <button onClick={handleResetAll}>Reset All</button>

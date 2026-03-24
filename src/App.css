@@ -900,6 +900,137 @@ body {
 
 .task-track-btn:hover { background: var(--gold); color: var(--bg); }
 
+
+
+
+/* ===== NOTES HISTORY ===== */
+.notes-history {
+  margin-top: 16px;
+}
+
+.history-entry {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.history-date {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-field {
+  margin-bottom: 10px;
+}
+
+.history-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.history-value {
+  font-size: 13px;
+  color: var(--text-mid);
+  line-height: 1.5;
+}
+
+
+/* ===== NOTES HISTORY ===== */
+.notes-history { margin-top: 16px; }
+
+.history-entry {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.history-date {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.history-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.history-btn {
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid;
+}
+
+.history-btn.download {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.history-btn.download:hover {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.history-btn.delete {
+  background: transparent;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.history-btn.delete:hover {
+  background: var(--danger);
+  color: var(--bg);
+}
+
+.history-field { margin-bottom: 10px; }
+
+.history-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.history-value {
+  font-size: 13px;
+  color: var(--text-mid);
+  line-height: 1.5;
+}
+
 /* ===== MOBILE RESPONSIVE ===== */
 @media (max-width: 700px) {
 
