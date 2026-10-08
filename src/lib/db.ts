@@ -176,3 +176,406 @@ export async function deleteNotesHistory(userId: string, id: string) {
     
   if (error) throw error
 }
+
+
+
+
+// ============================================
+// PHASE 1 ADDITIONS
+// Add these at the BOTTOM of src/lib/db.ts
+// ============================================
+
+// ===== HONOR =====
+
+// ===== HONOR (Updated) =====
+
+export async function saveHonor(userId: string, honor: number) {
+  const { error } = await supabase
+    .from('global_data')
+    .update({ 
+      honor, 
+      honor_updated_at: new Date().toISOString() 
+    })
+    .eq('id', userId)
+
+  if (error) throw error
+}
+
+export async function saveHonorDecay(userId: string, honor: number) {
+  const { error } = await supabase
+    .from('global_data')
+    .update({ 
+      honor,
+      last_honor_decay: new Date().toISOString(),
+    })
+    .eq('id', userId)
+
+  if (error) throw error
+}
+
+export async function loadHonorDecay(userId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('global_data')
+    .select('last_honor_decay')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (error) throw error
+  return data?.last_honor_decay ?? null
+}
+
+// ===== DECLINED TASKS =====
+
+export async function saveDeclinedTasks(
+  userId: string, 
+  declined: Record<string, boolean>
+) {
+  const { error } = await supabase
+    .from('task_state')
+    .update({ 
+      declined, 
+      updated_at: new Date().toISOString() 
+    })
+    .eq('id', userId)
+
+  if (error) throw error
+}
+
+
+
+
+// ===== PHASE 2 — SKILL PROGRESS =====
+
+export async function loadSkillProgress(userId: string) {
+  const { data, error } = await supabase
+    .from('user_skill_progress')
+    .select('*')
+    .eq('user_id', userId)
+
+  if (error) throw error
+  return data || []
+}
+
+export async function saveSkillProgress(
+  userId: string,
+  nodeId: string,
+  status: string
+) {
+  const { error } = await supabase
+    .from('user_skill_progress')
+    .upsert({
+      user_id: userId,
+      node_id: nodeId,
+      status,
+      mastered_at: status === 'mastered' ? new Date().toISOString() : null,
+    })
+
+  if (error) throw error
+}
+
+export async function saveCategoryXP(
+  userId: string,
+  categoryXP: Record<string, number>
+) {
+  const { error } = await supabase
+    .from('global_data')
+    .update({ category_xp: categoryXP })
+    .eq('id', userId)
+
+  if (error) throw error
+}
+
+
+// ===== PHASE 3 — SHADOWS =====
+
+export async function loadShadows(userId: string) {
+  const { data, error } = await supabase
+    .from('user_shadows')
+    .select('*')
+    .eq('user_id', userId)
+    .order('extracted_at', { ascending: false })
+
+  if (error) throw error
+  return data || []
+}
+
+export async function saveShadow(
+  userId: string,
+  shadowId: string,
+  extractedFrom: string
+) {
+  const { error } = await supabase
+    .from('user_shadows')
+    .insert({
+      user_id: userId,
+      shadow_id: shadowId,
+      extracted_from: extractedFrom,
+    })
+
+  if (error) throw error
+}
+
+// ===== PHASE 4 — DUNGEONS =====
+
+export async function loadActiveDungeons(userId: string) {
+  const { data, error } = await supabase
+    .from('user_dungeons')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+
+  if (error) throw error
+  return data || []
+}
+
+export async function loadAllDungeons(userId: string) {
+  const { data, error } = await supabase
+    .from('user_dungeons')
+    .select('*')
+    .eq('user_id', userId)
+    .order('started_at', { ascending: false })
+
+  if (error) throw error
+  return data || []
+}
+
+export async function enterDungeon(userId: string, dungeonId: string) {
+  const { data, error } = await supabase
+    .from('user_dungeons')
+    .insert({
+      user_id: userId,
+      dungeon_id: dungeonId,
+      status: 'active',
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function completeDungeon(userId: string, id: string) {
+  const { error } = await supabase
+    .from('user_dungeons')
+    .update({
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('user_id', userId)
+
+  if (error) throw error
+}
+
+export async function failDungeon(userId: string, id: string) {
+  const { error } = await supabase
+    .from('user_dungeons')
+    .update({
+      status: 'failed',
+      failed_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('user_id', userId)
+
+  if (error) throw error
+}
+
+
+// ===== PHASE 5 — GATES =====
+
+export async function loadPendingGate(userId: string) {
+  const { data, error } = await supabase
+    .from('user_gates')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('status', 'pending')
+    .order('appeared_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
+export async function saveGate(
+  userId: string,
+  gateId: string,
+  status: string
+) {
+  const { data, error } = await supabase
+    .from('user_gates')
+    .insert({
+      user_id: userId,
+      gate_id: gateId,
+      status,
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function resolveGate(userId: string, id: string, status: string) {
+  const { error } = await supabase
+    .from('user_gates')
+    .update({
+      status,
+      resolved_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('user_id', userId)
+
+  if (error) throw error
+}
+
+
+
+// ===== PHASE 6 — SEASONS =====
+
+export async function loadActiveSeason(userId: string) {
+  const { data, error } = await supabase
+    .from('user_seasons')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .maybeSingle()
+
+  if (error) throw error
+  return data
+}
+
+export async function createSeason(userId: string, seasonNum: number) {
+  const { data, error } = await supabase
+    .from('user_seasons')
+    .insert({
+      user_id: userId,
+      season_num: seasonNum,
+      status: 'active',
+    })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+export async function endSeason(userId: string, id: string, bossDefeated: boolean) {
+  const { error } = await supabase
+    .from('user_seasons')
+    .update({
+      status: 'completed',
+      ended_at: new Date().toISOString(),
+      boss_defeated: bossDefeated,
+      boss_defeated_at: bossDefeated ? new Date().toISOString() : null,
+    })
+    .eq('id', id)
+    .eq('user_id', userId)
+
+  if (error) throw error
+}
+
+// ===== PHASE 7 — CHRONICLES =====
+
+export async function loadChronicles(userId: string, limit = 20) {
+  const { data, error } = await supabase
+    .from('user_chronicles')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) throw error
+  return data || []
+}
+
+export async function saveChronicle(
+  userId: string,
+  entry: {
+    week_num: number
+    season_num: number
+    start_date: string
+    end_date: string
+    text: string
+    stats: Record<string, unknown>
+  }
+) {
+  const { data, error } = await supabase
+    .from('user_chronicles')
+    .insert({ user_id: userId, ...entry })
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+// ===== PHASE 8 — RELATIONSHIPS =====
+
+export async function loadRelationships(userId: string) {
+  const { data, error } = await supabase
+    .from('relationships')
+    .select('*')
+    .eq('user_id', userId)
+    .order('name', { ascending: true })
+
+  if (error) throw error
+  return data || []
+}
+
+export async function saveRelationship(
+  userId: string,
+  person: {
+    id?: string
+    name: string
+    emoji: string
+    tier: string
+    birthday: string | null
+    contact_freq_days: number
+    notes: string
+    gift_ideas: string
+    key_facts: string
+    their_people: string
+    their_work: string
+    their_struggles: string
+    their_wins: string
+    shared_history: string
+  }
+) {
+  if (person.id) {
+    // Update
+    const { error } = await supabase
+      .from('relationships')
+      .update({ ...person, updated_at: new Date().toISOString() })
+      .eq('id', person.id)
+      .eq('user_id', userId)
+    if (error) throw error
+  } else {
+    // Insert
+    const { error } = await supabase
+      .from('relationships')
+      .insert({ user_id: userId, ...person })
+    if (error) throw error
+  }
+}
+
+export async function markContacted(userId: string, id: string) {
+  const { error } = await supabase
+    .from('relationships')
+    .update({
+      last_contact_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id)
+    .eq('user_id', userId)
+  if (error) throw error
+}
+
+export async function deleteRelationship(userId: string, id: string) {
+  const { error } = await supabase
+    .from('relationships')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', userId)
+  if (error) throw error
+}
