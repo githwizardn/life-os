@@ -1,127 +1,38 @@
 # LIFE OS
 
-> A personal RPG-style life operating system. Zero AI. Zero cost. Deterministic systems only.
+Personal RPG-style life operating system. Client-heavy React SPA backed by Supabase. Deterministic systems only — no external APIs, no LLM calls, no paid services.
 
 **Live:** [life-os-chi-nine.vercel.app](https://life-os-chi-nine.vercel.app)  
-**Stack:** React 19 · TypeScript · Vite · Supabase · Custom CSS  
-**Cost:** $0/month forever (Supabase free tier + Vercel free tier)
+**Repo:** [github.com/githwizardn/life-os](https://github.com/githwizardn/life-os)
 
 ---
 
-## What is this?
-
-LIFE OS turns daily life into a Solo Leveling–style "System." You complete real tasks, earn XP, unlock skill trees, collect shadows, run dungeons, and get called out by a System Voice when you slack. Everything is deterministic — no random loot boxes, no LLM calls, no hidden costs.
-
-Every feature is designed against one rule:
-
-> **Does this change real life in 90 days?**
-
-If not, it doesn't ship.
-
----
-
-## Design Principles
-
-1. **Zero AI** — template-based systems only, no LLM APIs, $0 forever
-2. **Free forever** — Supabase free tier + Vercel free tier
-3. **Real impact** — every feature must change real life in 90 days
-4. **Deterministic over random** — seeded PRNG, no gambling mechanics
-5. **Depth over breadth** — fewer systems, done deeply
-6. **Honor over comfort** — declining tasks has real consequence
-
----
-
-## Features
-
-### Phase 1 — Foundation
-- **HONOR stat** (0–100, starts at 50)
-  - +1 per task, +2 for full category completion, −3 for declining
-  - 20% weekly decay toward 50
-- **System Voice** — 500+ hand-written lines across 6 moods (observing, pleased, concerned, disappointed, impressed, ancient)
-- **Decline mechanic** — refusing a task costs HONOR
-
-### Phase 2 — Skill Trees
-- 7 paths: **Iron** (body) · **Mind** · **Craft** (mastery) · **Coin** (autonomy) · **Grove** (growth) · **Voice** (connection) · **Flame** (joy)
-- 42 nodes total (6 tiers per path)
-- Auto-unlock when category XP + HONOR requirements are met
-- Passive XP bonuses scale from +2% (T1) to +20% (T6)
-
-### Phase 3 — Shadow Army
-- 10 collectible shadows extracted from **Legendary** task completions
-- Permanent passive abilities that stack with skill tree bonuses
-- **Shadow of the Monarch** — awarded for collecting all 7 base shadows
-
-### Phase 4 — Dungeons
-- 7 multi-hour instances (one per path)
-- 2–8 hour durations with auto-fail on expiry
-- Guaranteed Shadow on completion
-- Locked until category XP thresholds are met
-
-### Phase 5 — Gates
-- 100 hand-written random encounters
-- 2% chance per hour (deterministic PRNG on `userId + hour`)
-- 60-second countdown to enter or ignore
-- Entering awards XP · ignoring costs HONOR
-- Only one gate per hour
-
-### Phase 6 — Seasons
-- 7 seasons that cycle every 90 days
-- Each has a themed boss with 3 requirements
-- Boss defeat awards **Shadow of the Monarch** (+25% all XP)
-- Auto-transitions when the season duration expires
-
-### Phase 7 — Chronicles
-- Weekly narrative summaries generated from real data
-- Template-based (zero AI)
-- Stored in `user_chronicles`
-
-### Phase 8 — Relationship Dossier
-- Full-profile CRM for unlimited people
-- 6 tiers with soft caps: inner / close / family / friend / pro / ext
-- Tracks: name, emoji, tier, birthday (`MM-DD`), contact frequency, last contact, key facts, their people, their work, their struggles, their wins, gift ideas, shared history, notes
-- Overdue detection + urgency sorting
-- **Reach Out widget** — surfaces overdue contacts + birthdays within 7 days at the top of the dashboard
-- One-tap **Mark Contacted** resets the timer
-
----
-
-## Tech Stack
+## Stack
 
 | Layer | Tech |
 |---|---|
 | Frontend | React 19, TypeScript, Vite |
 | Auth | Supabase Auth |
-| Database | Supabase Postgres (with RLS) |
-| Storage | Supabase (row-based) + localStorage hybrid |
-| Styling | Custom CSS (dark cyberpunk) |
+| Database | Supabase Postgres (RLS on every table) |
+| Client state | React hooks + localStorage (offline fallback) |
+| Styling | Custom CSS (no framework) |
 | Font | Space Mono |
-| Hosting | Vercel |
+| PWA | Custom service worker (`public/sw.js`) |
+| Hosting | Vercel (auto-deploy on push to `main`) |
 
 ---
 
-## Local Development
+## Setup
 
-### Prerequisites
-- Node.js 20+
-- A Supabase project (free tier works)
-- Git
-
-### 1. Clone
+Requires Node.js 20+.
 
 ```bash
 git clone https://github.com/githwizardn/life-os.git
 cd life-os
-```
-
-### 2. Install
-
-```bash
 npm install
 ```
 
-### 3. Environment variables
-
-Create a `.env` file at the project root:
+Create `.env` at project root:
 
 ```env
 VITE_SUPABASE_URL=https://YOUR_PROJECT_ID.supabase.co
@@ -130,42 +41,18 @@ VITE_SUPABASE_ANON_KEY=your_anon_key_here
 
 Get both from **Supabase → Project Settings → API**.
 
-### 4. Run
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173).
-
-### 5. Build
-
-```bash
-npm run build
-npm run preview
-```
-
 ---
 
-## Database Schema
+## Commands
 
-All tables use Row-Level Security. Every row is scoped to `auth.uid()`.
+```bash
+npm run dev        # dev server, localhost:5173
+npm run build      # production build (tsc + vite build)
+npm run preview    # preview build, localhost:4173
+npm run lint       # eslint
+```
 
-| Table | Purpose |
-|---|---|
-| `profiles` | User name, goals, join date |
-| `global_data` | XP, streak, HONOR, category XP, decay tracking |
-| `task_state` | Daily task completion + decline state |
-| `notes` | Current daily notes |
-| `notes_history` | Snapshot archive of past notes |
-| `quests` | Multi-day quests with check-in tracking |
-| `user_skill_progress` | Unlocked skill nodes |
-| `user_shadows` | Collected shadows |
-| `user_dungeons` | Active + completed + failed dungeon runs |
-| `user_gates` | Gate encounters (pending / entered / ignored) |
-| `user_seasons` | Season runs + boss defeat status |
-| `user_chronicles` | Weekly narrative summaries |
-| `relationships` | Full relationship dossier entries |
+The service worker only registers when `import.meta.env.PROD` is true. To test PWA behavior, run `build` then `preview` — not `dev`.
 
 ---
 
@@ -174,52 +61,30 @@ All tables use Row-Level Security. Every row is scoped to `auth.uid()`.
 ```
 life-os/
 ├── public/
+│   ├── icon.svg               # PWA / Apple touch icon
+│   ├── favicon.svg            # tab icon
+│   ├── manifest.webmanifest   # PWA manifest
+│   └── sw.js                  # service worker
 ├── src/
-│   ├── App.tsx                      # Main app — all state, handlers, layout
-│   ├── App.css                      # All styles (dark cyberpunk)
-│   ├── main.tsx
-│   ├── index.css
-│   ├── data/
-│   │   ├── tasks.ts                 # 700+ tasks across 7 categories
-│   │   ├── skillTrees.ts            # 42 skill node definitions
-│   │   ├── shadows.ts               # 10 shadow definitions
-│   │   ├── dungeons.ts              # 7 dungeon definitions
-│   │   ├── gates.ts                 # 100 gate encounters
-│   │   ├── seasons.ts               # 7 season definitions
-│   │   ├── systemVoice.ts           # 500+ voice lines
-│   │   └── relationships.ts         # Tier definitions + emoji set
-│   ├── lib/
-│   │   ├── supabase.ts              # Supabase client
-│   │   ├── db.ts                    # All Supabase calls
-│   │   ├── honor.ts                 # HONOR math
-│   │   ├── skills.ts                # Skill unlock logic
-│   │   ├── shadows.ts               # Shadow extraction logic
-│   │   ├── dungeons.ts              # Dungeon timing logic
-│   │   ├── seasons.ts               # Season + boss logic
-│   │   ├── chronicles.ts            # Narrative generation
-│   │   └── relationships.ts         # Dossier logic
-│   ├── components/
-│   │   ├── Auth.tsx
-│   │   ├── Onboarding.tsx
-│   │   ├── Header.tsx
-│   │   ├── XPBar.tsx
-│   │   ├── HonorBar.tsx
-│   │   ├── SystemVoice.tsx
-│   │   ├── TaskList.tsx
-│   │   ├── ScoreCards.tsx
-│   │   ├── DayProgress.tsx
-│   │   ├── SkillTree.tsx
-│   │   ├── ShadowArmy.tsx
-│   │   ├── DungeonList.tsx
-│   │   ├── GateModal.tsx
-│   │   ├── SeasonBanner.tsx
-│   │   ├── Chronicle.tsx
-│   │   ├── RelationshipCRM.tsx
-│   │   ├── ReachOutWidget.tsx
-│   │   ├── Notes.tsx
-│   │   ├── LevelUpModal.tsx
-│   │   ├── CategorySelectModal.tsx
-│   │   └── QuestTracker.tsx
+│   ├── App.tsx                # main component, all global state
+│   ├── App.css                # all styles
+│   ├── main.tsx               # entry, registers SW in prod
+│   ├── data/                  # static definitions (tasks, skills, shadows, etc.)
+│   ├── lib/                   # logic + Supabase calls
+│   │   ├── supabase.ts        # client
+│   │   ├── db.ts              # all queries
+│   │   ├── honor.ts           # HONOR math
+│   │   ├── skills.ts          # unlock rules
+│   │   ├── shadows.ts         # extraction rules
+│   │   ├── dungeons.ts        # timing
+│   │   ├── seasons.ts         # season + boss logic
+│   │   ├── chronicles.ts      # template narrative
+│   │   ├── relationships.ts   # dossier logic
+│   │   ├── decisions.ts       # decision journal logic
+│   │   ├── bodyMind.ts        # sleep/workout/measure/reading/finance
+│   │   ├── sound.ts           # Web Audio chimes
+│   │   └── notifications.ts   # permission + dedupe + fire
+│   ├── components/            # one file per section/modal
 │   └── hooks/
 │       └── useLocalStorage.ts
 ├── .env.example
@@ -233,79 +98,83 @@ life-os/
 
 ---
 
-## Design Aesthetic
+## Database
 
-- Dark cyberpunk / Solo Leveling "System" vibe
-- Primary: neon green `#00ffaa`
-- Secondary: purple `#a855f7`
-- Font: **Space Mono**
-- Card-based layout, every section has icon + title + count
-- Animations are subtle, never distracting
+Every table has RLS enabled and is scoped to `auth.uid()`.
+
+| Table | Purpose |
+|---|---|
+| `profiles` | name, goals, join date |
+| `global_data` | total_xp, streak, best_streak, last_day, reset_count, active_categories, honor, honor_updated_at, last_honor_decay, category_xp |
+| `task_state` | daily task completion + decline state |
+| `notes` | current daily notes |
+| `notes_history` | snapshot archive of notes |
+| `quests` | multi-day quests with check-in state |
+| `user_skill_progress` | unlocked skill nodes |
+| `user_shadows` | collected shadows |
+| `user_dungeons` | active / completed / failed dungeon runs |
+| `user_gates` | gate encounters (pending / entered / ignored) |
+| `user_seasons` | season runs + boss defeat status |
+| `user_chronicles` | weekly narrative summaries |
+| `relationships` | dossier entries (**birthday is `text`, not `date`** — stores DD-MM) |
+| `decisions` | decision journal + time-gated reviews |
+| `sleep_logs` | unique per (user_id, date) |
+| `workouts` | individual exercise entries |
+| `measurements` | unique per (user_id, date) |
+| `reading_logs` | books, courses, articles |
+| `finance_logs` | income / expense / net_worth entries |
+
+---
+
+## Architecture Notes
+
+- **Single big `App.tsx`.** All global state, all handlers, all layout live in one file. Sections are extracted into components but receive state and callbacks as props. No context, no state library.
+- **Hybrid persistence.** State is mirrored to localStorage on every change (`useLocalStorage` hook) and synced to Supabase asynchronously. If Supabase fails, UI stays responsive; next successful call reconciles.
+- **Deterministic randomness.** Gate appearances use a seeded PRNG on `userId + hour`. Same user, same hour = same gate. No `Math.random()` in gameplay paths.
+- **Service worker.** Caches the app shell (`/`, `/index.html`, manifest, icons). Never caches Supabase or cross-origin requests. Network-first for HTML navigation, cache-first for static assets.
+- **Notifications.** Deduped per day via localStorage. Mute toggle in Settings so you can silence without revoking browser permission.
+- **No backend code.** All logic runs client-side. Supabase is data + auth only.
 
 ---
 
 ## Deployment
 
-Deployed to Vercel. Every push to `main` auto-deploys.
+Vercel, auto-deploy on push to `main`.
 
-### First-time setup
-1. Go to [vercel.com](https://vercel.com) → New Project
-2. Import `github.com/githwizardn/life-os`
-3. Add environment variables:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-4. Deploy
+**Env vars required in Vercel project settings:**
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
 
-### Redeploy
-Just push to `main`:
-
+**Redeploy:**
 ```bash
 git push origin main
 ```
 
 ---
 
-## Roadmap
+## Phases
 
-| Phase | Status | Feature |
+| Phase | Status | Scope |
 |---|---|---|
 | 1 | ✅ | HONOR + System Voice + Decline |
-| 2 | ✅ | Skill Trees (7 paths, 42 nodes) |
-| 3 | ✅ | Shadow Army (10 shadows) |
-| 4 | ✅ | Dungeons (7 instances) |
-| 5 | ✅ | Gates (100 encounters) |
-| 6 | ✅ | Seasons (7 arcs, 90-day cycle) |
-| 7 | ✅ | Chronicles (weekly narratives) |
-| 8 | ✅ | Relationship Dossier + Reach Out widget |
-| 9 | ⏳ | **Decision Journal** |
-| 10 | ⏳ | Body & Mind Tracking |
-| 11 | ⏳ | Polish (PWA, notifications, sound) |
-
----
-
-## Philosophy
-
-LIFE OS is not a productivity app. It's not a habit tracker. It's a **mirror**.
-
-- It rewards showing up.
-- It punishes hiding.
-- It remembers what you said you'd do.
-- It tells you the truth about who you're becoming.
-
-No streaks to "protect." No dopamine loops. No AI to flatter you. Just a system that watches what you actually do, and reflects it back.
-
-> *"Honor over comfort."*
+| 2 | ✅ | Skill Trees |
+| 3 | ✅ | Shadow Army |
+| 4 | ✅ | Dungeons |
+| 5 | ✅ | Gates |
+| 6 | ✅ | Seasons |
+| 7 | ✅ | Chronicles |
+| 8 | ✅ | Relationship Dossier |
+| 9 | ✅ | Decision Journal |
+| 10 | ✅ | Body & Mind |
+| 11 | ✅ | PWA, notifications, sound, a11y |
+| 12 | ⏳ | Data & Settings (search, export, import) |
 
 ---
 
 ## License
 
-MIT — do whatever you want, just don't call it yours.
-
----
+MIT.
 
 ## Author
 
-Built by [@githwizardn](https://github.com/githwizardn).
-
-Solo dev. Free tier everything. Zero AI.
+[@githwizardn](https://github.com/githwizardn)
