@@ -145,7 +145,10 @@ function SleepTab({ sleepLogs, onSaveSleep, onDeleteSleep }: Props) {
   )
 }
 
-function SleepModal({ onSave, onClose }: { onSave: (d: any) => Promise<boolean>; onClose: () => void }) {
+function SleepModal({ onSave, onClose }: {
+  onSave: (d: Omit<SleepLog, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<boolean>
+  onClose: () => void
+}) {
   const [date, setDate] = useState(todayISO())
   const [bedtime, setBedtime] = useState('23:00')
   const [wakeTime, setWakeTime] = useState('07:00')
@@ -215,6 +218,7 @@ function SleepModal({ onSave, onClose }: { onSave: (d: any) => Promise<boolean>;
 
 function WorkoutTab({ workouts, onSaveWorkout, onDeleteWorkout }: Props) {
   const [open, setOpen] = useState(false)
+  const [now] = useState(() => Date.now())
 
   const grouped: Record<string, Workout[]> = {}
   for (const w of workouts) {
@@ -233,7 +237,7 @@ function WorkoutTab({ workouts, onSaveWorkout, onDeleteWorkout }: Props) {
         <div className="bm-stat">
           <div className="bm-stat-label">LAST 7 DAYS</div>
           <div className="bm-stat-value">
-            {dates.filter(d => (Date.now() - new Date(d).getTime()) < 7 * 864e5).length}
+                        {dates.filter(d => (now - new Date(d).getTime()) < 7 * 864e5).length}
           </div>
         </div>
         <div className="bm-stat">
@@ -276,7 +280,10 @@ function WorkoutTab({ workouts, onSaveWorkout, onDeleteWorkout }: Props) {
   )
 }
 
-function WorkoutModal({ onSave, onClose }: { onSave: (d: any) => Promise<boolean>; onClose: () => void }) {
+function WorkoutModal({ onSave, onClose }: {
+  onSave: (d: Omit<Workout, 'id' | 'user_id' | 'created_at'>) => Promise<boolean>
+  onClose: () => void
+}) {
   const [date, setDate] = useState(todayISO())
   const [exercise, setExercise] = useState('')
   const [sets, setSets] = useState(3)
@@ -426,7 +433,10 @@ function MeasureTab({ measurements, onSaveMeasurement, onDeleteMeasurement }: Pr
   )
 }
 
-function MeasureModal({ onSave, onClose }: { onSave: (d: any) => Promise<boolean>; onClose: () => void }) {
+function MeasureModal({ onSave, onClose }: {
+  onSave: (d: Omit<Measurement, 'id' | 'user_id' | 'created_at'>) => Promise<boolean>
+  onClose: () => void
+}) {
   const [date, setDate] = useState(todayISO())
   const [weight, setWeight] = useState('')
   const [waist, setWaist] = useState('')
@@ -559,7 +569,11 @@ function ReadingTab({ readingLogs, onSaveReading, onDeleteReading }: Props) {
   )
 }
 
-function ReadingModal({ log, onSave, onClose }: { log: ReadingLog | null; onSave: (d: any) => Promise<boolean>; onClose: () => void }) {
+function ReadingModal({ log, onSave, onClose }: {
+  log: ReadingLog | null
+  onSave: (d: Omit<ReadingLog, 'id' | 'user_id' | 'created_at' | 'updated_at'> & { id?: string }) => Promise<boolean>
+  onClose: () => void
+}) {
   const [title, setTitle] = useState(log?.title || '')
   const [author, setAuthor] = useState(log?.author || '')
   const [type, setType] = useState(log?.type || 'book')
@@ -644,16 +658,17 @@ function ReadingModal({ log, onSave, onClose }: { log: ReadingLog | null; onSave
 function FinanceTab({ financeLogs, onSaveFinance, onDeleteFinance }: Props) {
   const [open, setOpen] = useState(false)
   const [filter, setFilter] = useState<'all' | 'income' | 'expense' | 'net_worth'>('all')
+  const [now] = useState(() => Date.now())
 
   const visible = filter === 'all' ? financeLogs : financeLogs.filter(f => f.type === filter)
 
   const latestNetWorth = financeLogs.filter(f => f.type === 'net_worth')
     .sort((a, b) => b.date.localeCompare(a.date))[0]
 
-  const last30Income = financeLogs.filter(f => f.type === 'income' &&
-    (Date.now() - new Date(f.date).getTime()) < 30 * 864e5).reduce((s, f) => s + Number(f.amount), 0)
+    const last30Income = financeLogs.filter(f => f.type === 'income' &&
+    (now - new Date(f.date).getTime()) < 30 * 864e5).reduce((s, f) => s + Number(f.amount), 0)
   const last30Expense = financeLogs.filter(f => f.type === 'expense' &&
-    (Date.now() - new Date(f.date).getTime()) < 30 * 864e5).reduce((s, f) => s + Number(f.amount), 0)
+    (now - new Date(f.date).getTime()) < 30 * 864e5).reduce((s, f) => s + Number(f.amount), 0)
 
   return (
     <>
@@ -717,7 +732,10 @@ function FinanceTab({ financeLogs, onSaveFinance, onDeleteFinance }: Props) {
   )
 }
 
-function FinanceModal({ onSave, onClose }: { onSave: (d: any) => Promise<boolean>; onClose: () => void }) {
+function FinanceModal({ onSave, onClose }: {
+  onSave: (d: Omit<FinanceLog, 'id' | 'user_id' | 'created_at'>) => Promise<boolean>
+  onClose: () => void
+}) {
   const [date, setDate] = useState(todayISO())
   const [type, setType] = useState('expense')
   const [amount, setAmount] = useState('')
