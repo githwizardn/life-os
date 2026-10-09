@@ -26,6 +26,9 @@ import Chronicle from './components/Chronicle'
 import type { ChronicleEntry } from './components/Chronicle'
 import RelationshipCRM from './components/RelationshipCRM'
 import ReachOutWidget from './components/ReachOutWidget'
+import Sidebar, { type TabId } from './components/Sidebar'
+import BottomNav from './components/BottomNav'
+import CommandPalette from './components/CommandPalette'
 import DecisionJournal from './components/DecisionJournal'
 import BodyMind from './components/BodyMind'
 import SettingsModal from './components/SettingsModal'
@@ -246,6 +249,9 @@ function App() {
   const [bossReqs, setBossReqs] = useState<BossRequirementStatus[]>([])
   const [chronicles, setChronicles] = useState<ChronicleEntry[]>([])
   const [relationships, setRelationships] = useState<Relationship[]>([])
+
+  const [activeTab, setActiveTab] = useLocalStorage<TabId>('lifeos-active-tab', 'core')
+  const [showPalette, setShowPalette] = useState(false)
   const [decisions, setDecisions] = useState<Decision[]>([])
   const [sleepLogs, setSleepLogs] = useState<SleepLog[]>([])
   const [workouts, setWorkouts] = useState<Workout[]>([])
@@ -693,6 +699,22 @@ function App() {
     const id = setInterval(run, 15 * 60 * 1000)
     return () => clearInterval(id)
   }, [session, dataLoading, relationships, decisions, activeDungeons])
+
+    // ============================================
+  // COMMAND PALETTE SHORTCUT
+  // ============================================
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setShowPalette(true)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
 
   // ============================================
   // HELPERS
@@ -1213,157 +1235,281 @@ function App() {
   // ============================================
   // MAIN RENDER
   // ============================================
-
+ 
   return (
-    <div className="app">
-      <div className="bg-glow" />
-      <Header user={user} />
-      <XPBar globalData={globalData} getLevelData={getLevelData} />
-      <HonorBar honor={globalData.honor} />
-      <SystemVoice
-        userId={session.user.id}
-        state={{
-          honor: globalData.honor,
-          streak: globalData.streak,
-          completedToday: Object.values(taskState).filter(Boolean).length,
-          totalToday: tasks.length,
-          hour: new Date().getHours(),
-          daysIntoSeason: userSeason
-            ? Math.floor((Date.now() - new Date(userSeason.started_at).getTime()) / (1000 * 60 * 60 * 24))
-            : 0,
-          hasRecentWin: false,
-        }}
-      />
-      {userSeason && (
-        <SeasonBanner
-          season={getSeasonByNumber(userSeason.season_num)}
-          userSeason={userSeason}
-          requirements={bossReqs}
-          bossDefeated={userSeason.boss_defeated}
-        />
-      )}
-      <SkillTree
-        categoryXP={categoryXP}
-        honor={globalData.honor}
-        progress={skillProgress}
-      />
-      <ShadowArmy shadows={shadows} />
-      <DungeonList
-        activeDungeons={activeDungeons}
-        categoryXP={categoryXP}
-        honor={globalData.honor}
-        completedDungeonIds={allDungeons.filter(d => d.status === 'completed').map(d => d.dungeon_id)}
-        onEnter={handleEnterDungeon}
-        onComplete={handleCompleteDungeon}
-        onAbandon={handleAbandonDungeon}
-      />
-      <DayProgress />
+    <>
+      <Sidebar active={activeTab} onChange={setActiveTab} />
+      <BottomNav active={activeTab} onChange={setActiveTab} />
 
-      <TaskList
-        tasks={tasks}
-        taskState={taskState}
-        declinedTasks={declinedTasks}
-        onToggle={handleToggle}
-        onTrack={handleTrackQuest}
-        onDecline={handleDecline}
-      />
+      <div className="app">
+        <div className="bg-glow" />
 
-      {quests.filter(q => !q.completed).length > 0 && (
-        <QuestTracker
-          quests={quests.filter(q => !q.completed)}
-          onCheckin={handleQuestCheckin}
-          onAbandon={handleAbandonQuest}
-        />
-      )}
+        {/* ---------- ALWAYS VISIBLE ---------- */}
+        <Header user={user} />
+        <XPBar globalData={globalData} getLevelData={getLevelData} />
+        <HonorBar honor={globalData.honor} />
 
-      <ScoreCards tasks={tasks} taskState={taskState} />
 
-      <BodyMind
-        sleepLogs={sleepLogs}
-        workouts={workouts}
-        measurements={measurements}
-        readingLogs={readingLogs}
-        financeLogs={financeLogs}
-        onSaveSleep={handleSaveSleep}
-        onDeleteSleep={handleDeleteSleep}
-        onSaveWorkout={handleSaveWorkout}
-        onDeleteWorkout={handleDeleteWorkout}
-        onSaveMeasurement={handleSaveMeasurement}
-        onDeleteMeasurement={handleDeleteMeasurement}
-        onSaveReading={handleSaveReading}
-        onDeleteReading={handleDeleteReading}
-        onSaveFinance={handleSaveFinance}
-        onDeleteFinance={handleDeleteFinance}
-      />
+                <button
+          type="button"
+          className="palette-bar"
+          onClick={() => setShowPalette(true)}
+          aria-label="Open command palette"
+        >
+          <span className="palette-bar-icon">🔍</span>
+          <span className="palette-bar-text">Search or jump to…</span>
+          <span className="palette-bar-key">Ctrl K</span>
+        </button>
 
-      <Chronicle entries={chronicles} />
+        
+                {/* ---------- CORE ---------- */}
+        {activeTab === 'core' && (
+          <div className="tab-content">
 
-      <DecisionJournal
-        decisions={decisions}
-        onSave={handleSaveDecision}
-        onDelete={handleDeleteDecision}
-      />
+            {relationships.length > 0 && (
+              <ReachOutWidget
+                people={relationships}
+                onMarkContacted={handleMarkContacted}
+                onOpenPerson={() => setActiveTab('circle')}
+              />
+            )}
 
-      {relationships.length > 0 && (
-        <ReachOutWidget
-          people={relationships}
-          onMarkContacted={handleMarkContacted}
-          onOpenPerson={() => {
-            document
-              .querySelector('.rel-section')
-              ?.scrollIntoView({ behavior: 'smooth' })
-          }}
-        />
-      )}
+            <div className="core-bento">
+              <div className="core-main">
+                <SystemVoice
+                  userId={session.user.id}
+                  state={{
+                    honor: globalData.honor,
+                    streak: globalData.streak,
+                    completedToday: Object.values(taskState).filter(Boolean).length,
+                    totalToday: tasks.length,
+                    hour: new Date().getHours(),
+                    daysIntoSeason: userSeason
+                      ? Math.floor((Date.now() - new Date(userSeason.started_at).getTime()) / (1000 * 60 * 60 * 24))
+                      : 0,
+                    hasRecentWin: false,
+                  }}
+                />
 
-      <RelationshipCRM
-        people={relationships}
-        onSave={handleSaveRelationship}
-        onMarkContacted={handleMarkContacted}
-        onDelete={handleDeleteRelationship}
-      />
+                <DayProgress />
 
-      <Notes
-        notes={notes}
-        setNotes={handleSetNotes}
-        onSave={handleSaveNotes}
-        onDeleteHistory={handleDeleteHistory}
-        history={notesHistory}
-      />
+                <TaskList
+                  tasks={tasks}
+                  taskState={taskState}
+                  declinedTasks={declinedTasks}
+                  onToggle={handleToggle}
+                  onTrack={handleTrackQuest}
+                  onDecline={handleDecline}
+                />
 
-      <div className="actions">
-        <button onClick={handleResetDay}>Reset Day</button>
-        <button onClick={() => setShowSettings(true)}>⚙ Settings</button>
-        <button onClick={handleResetAll}>Reset All</button>
+                {quests.filter(q => !q.completed).length > 0 && (
+                  <QuestTracker
+                    quests={quests.filter(q => !q.completed)}
+                    onCheckin={handleQuestCheckin}
+                    onAbandon={handleAbandonQuest}
+                  />
+                )}
+              </div>
+
+              <aside className="core-side">
+                <div className="stats-mini">
+                  <div className="stats-mini-header">AT A GLANCE</div>
+
+                  <div className="stats-mini-item">
+                    <span className="stats-mini-value">{skillProgress.length}</span>
+                    <span className="stats-mini-label">Skills</span>
+                  </div>
+                  <div className="stats-mini-item">
+                    <span className="stats-mini-value">{shadows.length}</span>
+                    <span className="stats-mini-label">Shadows</span>
+                  </div>
+                  <div className="stats-mini-item">
+                    <span className="stats-mini-value">
+                      {allDungeons.filter(d => d.status === 'completed').length}
+                    </span>
+                    <span className="stats-mini-label">Dungeons</span>
+                  </div>
+                  <div className="stats-mini-item">
+                    <span className="stats-mini-value">
+                      {quests.filter(q => !q.completed).length}
+                    </span>
+                    <span className="stats-mini-label">Quests</span>
+                  </div>
+                  <div className="stats-mini-item">
+                    <span className="stats-mini-value">{relationships.length}</span>
+                    <span className="stats-mini-label">People</span>
+                  </div>
+                  <div className="stats-mini-item">
+                    <span className="stats-mini-value">{decisions.length}</span>
+                    <span className="stats-mini-label">Decisions</span>
+                  </div>
+                </div>
+
+                <div className="stats-mini stats-mini-honor">
+                  <div className="stats-mini-header">STATUS</div>
+                  <div className="stats-mini-item">
+                    <span className="stats-mini-value" style={{ color: 'var(--gold)' }}>
+                      {globalData.streak}
+                    </span>
+                    <span className="stats-mini-label">Streak</span>
+                  </div>
+                  <div className="stats-mini-item">
+                    <span className="stats-mini-value" style={{ color: 'var(--accent)' }}>
+                      {globalData.bestStreak}
+                    </span>
+                    <span className="stats-mini-label">Best</span>
+                  </div>
+                  <div className="stats-mini-item">
+                    <span className="stats-mini-value" style={{ color: 'var(--text-mid)' }}>
+                      {Object.values(taskState).filter(Boolean).length}
+                    </span>
+                    <span className="stats-mini-label">Done today</span>
+                  </div>
+                </div>
+              </aside>
+            </div>
+
+            <ScoreCards tasks={tasks} taskState={taskState} />
+          </div>
+        )}
+
+        {/* ---------- ASCENT ---------- */}
+        {activeTab === 'ascent' && (
+          <div className="tab-content">
+            {userSeason && (
+              <SeasonBanner
+                season={getSeasonByNumber(userSeason.season_num)}
+                userSeason={userSeason}
+                requirements={bossReqs}
+                bossDefeated={userSeason.boss_defeated}
+              />
+            )}
+
+            <SkillTree
+              categoryXP={categoryXP}
+              honor={globalData.honor}
+              progress={skillProgress}
+            />
+
+            <ShadowArmy shadows={shadows} />
+
+            <DungeonList
+              activeDungeons={activeDungeons}
+              categoryXP={categoryXP}
+              honor={globalData.honor}
+              completedDungeonIds={allDungeons.filter(d => d.status === 'completed').map(d => d.dungeon_id)}
+              onEnter={handleEnterDungeon}
+              onComplete={handleCompleteDungeon}
+              onAbandon={handleAbandonDungeon}
+            />
+          </div>
+        )}
+
+        {/* ---------- VESSEL ---------- */}
+        {activeTab === 'vessel' && (
+          <div className="tab-content">
+            <BodyMind
+              sleepLogs={sleepLogs}
+              workouts={workouts}
+              measurements={measurements}
+              readingLogs={readingLogs}
+              financeLogs={financeLogs}
+              onSaveSleep={handleSaveSleep}
+              onDeleteSleep={handleDeleteSleep}
+              onSaveWorkout={handleSaveWorkout}
+              onDeleteWorkout={handleDeleteWorkout}
+              onSaveMeasurement={handleSaveMeasurement}
+              onDeleteMeasurement={handleDeleteMeasurement}
+              onSaveReading={handleSaveReading}
+              onDeleteReading={handleDeleteReading}
+              onSaveFinance={handleSaveFinance}
+              onDeleteFinance={handleDeleteFinance}
+            />
+
+            <Chronicle entries={chronicles} />
+
+            <Notes
+              notes={notes}
+              setNotes={handleSetNotes}
+              onSave={handleSaveNotes}
+              onDeleteHistory={handleDeleteHistory}
+              history={notesHistory}
+            />
+          </div>
+        )}
+
+        {/* ---------- CIRCLE ---------- */}
+        {activeTab === 'circle' && (
+          <div className="tab-content">
+            <RelationshipCRM
+              people={relationships}
+              onSave={handleSaveRelationship}
+              onMarkContacted={handleMarkContacted}
+              onDelete={handleDeleteRelationship}
+            />
+          </div>
+        )}
+
+        {/* ---------- RECORD ---------- */}
+        {activeTab === 'record' && (
+          <div className="tab-content">
+            <DecisionJournal
+              decisions={decisions}
+              onSave={handleSaveDecision}
+              onDelete={handleDeleteDecision}
+            />
+          </div>
+        )}
+
+        {/* ---------- FOOTER ACTIONS ---------- */}
+        <div className="actions">
+          <button onClick={handleResetDay}>Reset Day</button>
+          <button onClick={() => setShowSettings(true)}>⚙ Settings</button>
+          <button onClick={handleResetAll}>Reset All</button>
+        </div>
+
+        {/* ---------- FLOATING / MODALS ---------- */}
+        {levelUpData && (
+          <LevelUpModal
+            level={levelUpData}
+            onClose={() => setLevelUpData(null)}
+          />
+        )}
+
+        {showCategoryModal && (
+          <CategorySelectModal
+            current={activeCategories.length > 0 ? activeCategories : user.goals}
+            onConfirm={handleConfirmReset}
+            onCancel={() => setShowCategoryModal(false)}
+          />
+        )}
+
+        {showSettings && (
+          <SettingsModal onClose={() => setShowSettings(false)} />
+        )}
+
+        {activeGate && (
+          <GateModal
+            gate={activeGate}
+            onEnter={handleEnterGate}
+            onIgnore={handleIgnoreGate}
+          />
+        )}
+                {showPalette && (
+          <CommandPalette
+            open={showPalette}
+            onClose={() => setShowPalette(false)}
+            onNavigate={setActiveTab}
+            tasks={tasks}
+            quests={quests}
+            relationships={relationships}
+            decisions={decisions}
+            readingLogs={readingLogs}
+            notes={notes}
+          />
+        )}
       </div>
-
-      {levelUpData && (
-        <LevelUpModal
-          level={levelUpData}
-          onClose={() => setLevelUpData(null)}
-        />
-      )}
-
-      {showCategoryModal && (
-        <CategorySelectModal
-          current={activeCategories.length > 0 ? activeCategories : user.goals}
-          onConfirm={handleConfirmReset}
-          onCancel={() => setShowCategoryModal(false)}
-        />
-      )}
-
-      {showSettings && (
-        <SettingsModal onClose={() => setShowSettings(false)} />
-      )}
-
-      {activeGate && (
-        <GateModal
-          gate={activeGate}
-          onEnter={handleEnterGate}
-          onIgnore={handleIgnoreGate}
-        />
-      )}
-    </div>
+    </>
   )
 }
 
