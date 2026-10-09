@@ -59,11 +59,11 @@ export function getDaysUntilBirthday(birthday: string | null): number | null {
   const trimmed = birthday.trim()
 
   if (trimmed.length === 5 && trimmed[2] === '-') {
-    // MM-DD
-    month = parseInt(trimmed.slice(0, 2), 10) - 1
-    day = parseInt(trimmed.slice(3, 5), 10)
+    // DD-MM (current format)
+    day = parseInt(trimmed.slice(0, 2), 10)
+    month = parseInt(trimmed.slice(3, 5), 10) - 1
   } else if (trimmed.length === 10) {
-    // YYYY-MM-DD
+    // YYYY-MM-DD (legacy from old date input)
     const parts = trimmed.split('-')
     month = parseInt(parts[1], 10) - 1
     day = parseInt(parts[2], 10)
