@@ -27,8 +27,12 @@ import type { ChronicleEntry } from './components/Chronicle'
 import RelationshipCRM from './components/RelationshipCRM'
 import ReachOutWidget from './components/ReachOutWidget'
 import DecisionJournal from './components/DecisionJournal'
+import BodyMind from './components/BodyMind'
 import { type Relationship } from './lib/relationships'
 import { type Decision } from './lib/decisions'
+import {
+  type SleepLog, type Workout, type Measurement, type ReadingLog, type FinanceLog,
+} from './lib/bodyMind'
 import { determineShadowFromLegendary, type UserShadow } from './lib/shadows'
 import { type UserDungeon, isExpired } from './lib/dungeons'
 import { getDungeonById } from './data/dungeons'
@@ -81,6 +85,21 @@ import {
   loadDecisions,
   saveDecision,
   deleteDecision,
+  loadSleepLogs,
+  saveSleepLog,
+  deleteSleepLog,
+  loadWorkouts,
+  saveWorkout,
+  deleteWorkout,
+  loadMeasurements,
+  saveMeasurement,
+  deleteMeasurement,
+  loadReadingLogs,
+  saveReadingLog,
+  deleteReadingLog,
+  loadFinanceLogs,
+  saveFinanceLog,
+  deleteFinanceLog,
 } from './lib/db'
 import {
   applyHonorAction,
@@ -223,6 +242,11 @@ function App() {
   const [chronicles, setChronicles] = useState<ChronicleEntry[]>([])
   const [relationships, setRelationships] = useState<Relationship[]>([])
   const [decisions, setDecisions] = useState<Decision[]>([])
+  const [sleepLogs, setSleepLogs] = useState<SleepLog[]>([])
+  const [workouts, setWorkouts] = useState<Workout[]>([])
+  const [measurements, setMeasurements] = useState<Measurement[]>([])
+  const [readingLogs, setReadingLogs] = useState<ReadingLog[]>([])
+  const [financeLogs, setFinanceLogs] = useState<FinanceLog[]>([])
   const gateCheckedRef = useRef<string>('')
 
   // ============================================
@@ -426,6 +450,18 @@ function App() {
         // ---- Decisions ----
         const decisionsData = await loadDecisions(userId)
         setDecisions(decisionsData as Decision[])
+
+        // ---- Body & Mind ----
+        const sleepData = await loadSleepLogs(userId)
+        setSleepLogs(sleepData as SleepLog[])
+        const workoutData = await loadWorkouts(userId)
+        setWorkouts(workoutData as Workout[])
+        const measureData = await loadMeasurements(userId)
+        setMeasurements(measureData as Measurement[])
+        const readingData = await loadReadingLogs(userId)
+        setReadingLogs(readingData as ReadingLog[])
+        const financeData = await loadFinanceLogs(userId)
+        setFinanceLogs(financeData as FinanceLog[])
 
         // ---- Gates (load any pending) ----
         const pendingGate = await loadPendingGate(userId)
@@ -1014,6 +1050,85 @@ function App() {
   }
 
   // ============================================
+  // BODY & MIND HANDLERS
+  // ============================================
+
+  const handleSaveSleep = async (log: Omit<SleepLog, 'id' | 'user_id' | 'created_at' | 'updated_at'>): Promise<boolean> => {
+    if (!session) return false
+    try {
+      await saveSleepLog(session.user.id, log)
+      const fresh = await loadSleepLogs(session.user.id)
+      setSleepLogs(fresh as SleepLog[])
+      return true
+    } catch { return false }
+  }
+  const handleDeleteSleep = async (id: string) => {
+    if (!session) return
+    await deleteSleepLog(session.user.id, id)
+    setSleepLogs(prev => prev.filter(x => x.id !== id))
+  }
+
+  const handleSaveWorkout = async (w: Omit<Workout, 'id' | 'user_id' | 'created_at'> & { id?: string }): Promise<boolean> => {
+    if (!session) return false
+    try {
+      await saveWorkout(session.user.id, w)
+      const fresh = await loadWorkouts(session.user.id)
+      setWorkouts(fresh as Workout[])
+      return true
+    } catch { return false }
+  }
+  const handleDeleteWorkout = async (id: string) => {
+    if (!session) return
+    await deleteWorkout(session.user.id, id)
+    setWorkouts(prev => prev.filter(x => x.id !== id))
+  }
+
+  const handleSaveMeasurement = async (m: Omit<Measurement, 'id' | 'user_id' | 'created_at'>): Promise<boolean> => {
+    if (!session) return false
+    try {
+      await saveMeasurement(session.user.id, m)
+      const fresh = await loadMeasurements(session.user.id)
+      setMeasurements(fresh as Measurement[])
+      return true
+    } catch { return false }
+  }
+  const handleDeleteMeasurement = async (id: string) => {
+    if (!session) return
+    await deleteMeasurement(session.user.id, id)
+    setMeasurements(prev => prev.filter(x => x.id !== id))
+  }
+
+  const handleSaveReading = async (r: Omit<ReadingLog, 'id' | 'user_id' | 'created_at' | 'updated_at'> & { id?: string }): Promise<boolean> => {
+    if (!session) return false
+    try {
+      await saveReadingLog(session.user.id, r)
+      const fresh = await loadReadingLogs(session.user.id)
+      setReadingLogs(fresh as ReadingLog[])
+      return true
+    } catch { return false }
+  }
+  const handleDeleteReading = async (id: string) => {
+    if (!session) return
+    await deleteReadingLog(session.user.id, id)
+    setReadingLogs(prev => prev.filter(x => x.id !== id))
+  }
+
+  const handleSaveFinance = async (f: Omit<FinanceLog, 'id' | 'user_id' | 'created_at'> & { id?: string }): Promise<boolean> => {
+    if (!session) return false
+    try {
+      await saveFinanceLog(session.user.id, f)
+      const fresh = await loadFinanceLogs(session.user.id)
+      setFinanceLogs(fresh as FinanceLog[])
+      return true
+    } catch { return false }
+  }
+  const handleDeleteFinance = async (id: string) => {
+    if (!session) return
+    await deleteFinanceLog(session.user.id, id)
+    setFinanceLogs(prev => prev.filter(x => x.id !== id))
+  }
+
+  // ============================================
   // LOADING SCREEN
   // ============================================
 
@@ -1098,6 +1213,24 @@ function App() {
       )}
 
       <ScoreCards tasks={tasks} taskState={taskState} />
+
+      <BodyMind
+        sleepLogs={sleepLogs}
+        workouts={workouts}
+        measurements={measurements}
+        readingLogs={readingLogs}
+        financeLogs={financeLogs}
+        onSaveSleep={handleSaveSleep}
+        onDeleteSleep={handleDeleteSleep}
+        onSaveWorkout={handleSaveWorkout}
+        onDeleteWorkout={handleDeleteWorkout}
+        onSaveMeasurement={handleSaveMeasurement}
+        onDeleteMeasurement={handleDeleteMeasurement}
+        onSaveReading={handleSaveReading}
+        onDeleteReading={handleDeleteReading}
+        onSaveFinance={handleSaveFinance}
+        onDeleteFinance={handleDeleteFinance}
+      />
 
       <Chronicle entries={chronicles} />
 

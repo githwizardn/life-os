@@ -644,3 +644,114 @@ export async function deleteDecision(userId: string, id: string) {
     .eq('user_id', userId)
   if (error) throw error
 }
+
+// ===== PHASE 10 — BODY & MIND =====
+
+export async function loadSleepLogs(userId: string) {
+  const { data, error } = await supabase
+    .from('sleep_logs').select('*')
+    .eq('user_id', userId).order('date', { ascending: false })
+  if (error) throw error
+  return data || []
+}
+export async function saveSleepLog(userId: string, log: Partial<SleepLog> & { date: string }) {
+  const { error } = await supabase
+    .from('sleep_logs')
+    .upsert({ user_id: userId, ...log, updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,date' })
+  if (error) { console.error('saveSleepLog error:', error); throw error }
+}
+export async function deleteSleepLog(userId: string, id: string) {
+  const { error } = await supabase.from('sleep_logs').delete().eq('id', id).eq('user_id', userId)
+  if (error) throw error
+}
+
+export async function loadWorkouts(userId: string) {
+  const { data, error } = await supabase
+    .from('workouts').select('*')
+    .eq('user_id', userId).order('date', { ascending: false }).limit(200)
+  if (error) throw error
+  return data || []
+}
+export async function saveWorkout(userId: string, w: Omit<Workout, 'id' | 'user_id' | 'created_at'> & { id?: string }) {
+  if (w.id) {
+    const { error } = await supabase.from('workouts').update(w).eq('id', w.id).eq('user_id', userId)
+    if (error) throw error
+  } else {
+    const { error } = await supabase.from('workouts').insert({ user_id: userId, ...w })
+    if (error) throw error
+  }
+}
+export async function deleteWorkout(userId: string, id: string) {
+  const { error } = await supabase.from('workouts').delete().eq('id', id).eq('user_id', userId)
+  if (error) throw error
+}
+
+export async function loadMeasurements(userId: string) {
+  const { data, error } = await supabase
+    .from('measurements').select('*')
+    .eq('user_id', userId).order('date', { ascending: false })
+  if (error) throw error
+  return data || []
+}
+export async function saveMeasurement(userId: string, m: Partial<Measurement> & { date: string }) {
+  const { error } = await supabase
+    .from('measurements')
+    .upsert({ user_id: userId, ...m }, { onConflict: 'user_id,date' })
+  if (error) { console.error('saveMeasurement error:', error); throw error }
+}
+export async function deleteMeasurement(userId: string, id: string) {
+  const { error } = await supabase.from('measurements').delete().eq('id', id).eq('user_id', userId)
+  if (error) throw error
+}
+
+export async function loadReadingLogs(userId: string) {
+  const { data, error } = await supabase
+    .from('reading_logs').select('*')
+    .eq('user_id', userId).order('created_at', { ascending: false })
+  if (error) throw error
+  return data || []
+}
+export async function saveReadingLog(userId: string, r: Partial<ReadingLog> & { title: string }) {
+  if (r.id) {
+    const { error } = await supabase
+      .from('reading_logs').update({ ...r, updated_at: new Date().toISOString() })
+      .eq('id', r.id).eq('user_id', userId)
+    if (error) throw error
+  } else {
+    const { error } = await supabase.from('reading_logs').insert({ user_id: userId, ...r })
+    if (error) throw error
+  }
+}
+export async function deleteReadingLog(userId: string, id: string) {
+  const { error } = await supabase.from('reading_logs').delete().eq('id', id).eq('user_id', userId)
+  if (error) throw error
+}
+
+export async function loadFinanceLogs(userId: string) {
+  const { data, error } = await supabase
+    .from('finance_logs').select('*')
+    .eq('user_id', userId).order('date', { ascending: false }).limit(300)
+  if (error) throw error
+  return data || []
+}
+export async function saveFinanceLog(userId: string, f: Omit<FinanceLog, 'id' | 'user_id' | 'created_at'> & { id?: string }) {
+  if (f.id) {
+    const { error } = await supabase.from('finance_logs').update(f).eq('id', f.id).eq('user_id', userId)
+    if (error) throw error
+  } else {
+    const { error } = await supabase.from('finance_logs').insert({ user_id: userId, ...f })
+    if (error) throw error
+  }
+}
+export async function deleteFinanceLog(userId: string, id: string) {
+  const { error } = await supabase.from('finance_logs').delete().eq('id', id).eq('user_id', userId)
+  if (error) throw error
+}
+
+// Types re-exported for db.ts use
+type SleepLog = import('./bodyMind').SleepLog
+type Workout = import('./bodyMind').Workout
+type Measurement = import('./bodyMind').Measurement
+type ReadingLog = import('./bodyMind').ReadingLog
+type FinanceLog = import('./bodyMind').FinanceLog
