@@ -28,8 +28,10 @@ import RelationshipCRM from './components/RelationshipCRM'
 import ReachOutWidget from './components/ReachOutWidget'
 import DecisionJournal from './components/DecisionJournal'
 import BodyMind from './components/BodyMind'
+import SettingsModal from './components/SettingsModal'
 import { type Relationship } from './lib/relationships'
-import { type Decision } from './lib/decisions'
+import { isOverdue, getDaysUntilBirthday } from './lib/relationships'
+import { type Decision, isReviewOverdue } from './lib/decisions'
 import {
   type SleepLog, type Workout, type Measurement, type ReadingLog, type FinanceLog,
 } from './lib/bodyMind'
@@ -112,6 +114,8 @@ import {
   type CategoryXP,
 } from './lib/skills'
 import { ALL_SKILL_NODES } from './data/skillTrees'
+import { sound } from './lib/sound'
+import { checkAndNotify } from './lib/notifications'
 import './App.css'
 
 // ============================================
@@ -226,6 +230,7 @@ function App() {
   const [quests, setQuests] = useLocalStorage<Quest[]>('lifeos-quests', [])
   const [levelUpData, setLevelUpData] = useState<{ lvl: number; name: string } | null>(null)
   const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const [notesHistory, setNotesHistory] = useState<NoteHistoryEntry[]>([])
   const [skillProgress, setSkillProgress] = useState<SkillProgress[]>([])
   const [categoryXP, setCategoryXP] = useState<CategoryXP>({
@@ -248,6 +253,19 @@ function App() {
   const [readingLogs, setReadingLogs] = useState<ReadingLog[]>([])
   const [financeLogs, setFinanceLogs] = useState<FinanceLog[]>([])
   const gateCheckedRef = useRef<string>('')
+
+  // ============================================
+  // SOUND INIT (respect saved preference)
+  // ============================================
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('lifeos-sound')
+      sound.setMuted(saved === 'off')
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
   // ============================================
   // AUTH
@@ -276,13 +294,11 @@ function App() {
 
     async function loadAll() {
       try {
-        // ---- Profile ----
         const profile = await loadProfile(userId)
         if (profile) {
           setUser({ name: profile.name, goals: profile.goals, joined: profile.joined })
         }
 
-        // ---- Global Data + Honor ----
         const global = await loadGlobalData(userId)
         if (global) {
           setGlobalData({
@@ -393,7 +409,6 @@ function App() {
         setAllDungeons(mapped)
         setActiveDungeons(stillActive)
 
-        // ---- Season ----
         let activeSeason = await loadActiveSeason(userId)
         if (!activeSeason) {
           activeSeason = await createSeason(userId, 1)
@@ -431,7 +446,6 @@ function App() {
           }
         }
 
-        // ---- Chronicles ----
         const chronicleData = await loadChronicles(userId, 50)
         setChronicles(chronicleData.map((c: RawChronicleRow) => ({
           id: c.id,
@@ -443,15 +457,12 @@ function App() {
           created_at: c.created_at,
         })))
 
-        // ---- Relationships ----
         const relationshipsData = await loadRelationships(userId)
         setRelationships(relationshipsData as Relationship[])
 
-        // ---- Decisions ----
         const decisionsData = await loadDecisions(userId)
         setDecisions(decisionsData as Decision[])
 
-        // ---- Body & Mind ----
         const sleepData = await loadSleepLogs(userId)
         setSleepLogs(sleepData as SleepLog[])
         const workoutData = await loadWorkouts(userId)
@@ -463,7 +474,6 @@ function App() {
         const financeData = await loadFinanceLogs(userId)
         setFinanceLogs(financeData as FinanceLog[])
 
-        // ---- Gates (load any pending) ----
         const pendingGate = await loadPendingGate(userId)
         if (pendingGate) {
           const g = getGateById((pendingGate as RawGateRow).gate_id)
@@ -501,6 +511,7 @@ function App() {
 
       const gate = generateGateForHour(session.user.id, now.getHours())
       if (gate) {
+        sound.gateAppear()
         const row = await saveGate(session.user.id, gate.id, 'pending')
         setActiveGate(gate)
         setActiveGateRowId(row.id)
@@ -647,6 +658,43 @@ function App() {
   }, [session, userSeason, chronicles, dataLoading, taskState, categoryXP, globalData, shadows, allDungeons, bossReqs])
 
   // ============================================
+  // REMINDER CHECK (notifications)
+  // ============================================
+
+  useEffect(() => {
+    if (!session || dataLoading) return
+
+    const run = () => {
+      const overdue = relationships.filter(p => isOverdue(p))
+      const bdays = relationships.filter(p => {
+        const d = getDaysUntilBirthday(p.birthday)
+        return d === 0
+      })
+      const reviewsDue = decisions.filter(d => isReviewOverdue(d)).length
+
+      const dungeonExpiring = activeDungeons.some(d => {
+        const dungeon = getDungeonById(d.dungeon_id)
+        if (!dungeon) return false
+        const started = new Date(d.started_at).getTime()
+        const expires = started + dungeon.duration_hours * 60 * 60 * 1000
+        const left = expires - Date.now()
+        return left > 0 && left < 30 * 60 * 1000
+      })
+
+      checkAndNotify({
+        overduePeople: overdue.map(p => ({ name: p.name })),
+        birthdaysToday: bdays.map(p => ({ name: p.name })),
+        reviewsDue,
+        dungeonExpiring,
+      })
+    }
+
+    run()
+    const id = setInterval(run, 15 * 60 * 1000)
+    return () => clearInterval(id)
+  }, [session, dataLoading, relationships, decisions, activeDungeons])
+
+  // ============================================
   // HELPERS
   // ============================================
 
@@ -698,6 +746,8 @@ function App() {
     if (session) saveTaskState(session.user.id, newState)
 
     if (!wasChecked) {
+      sound.taskComplete()
+
       const task = allTasks.find(t => t.id === taskId)
       const prevLevel = getLevelData(globalData.totalXP)
       const newXP = globalData.totalXP + xp
@@ -742,6 +792,7 @@ function App() {
         saveHonor(session.user.id, honor)
       }
       if (newLevel.lvl > prevLevel.lvl) {
+        sound.levelUp()
         setTimeout(() => setLevelUpData(newLevel), 600)
       }
     } else {
@@ -770,6 +821,8 @@ function App() {
   const handleDecline = (taskId: string) => {
     if (taskState[taskId]) return
     if (declinedTasks[taskId]) return
+
+    sound.honorDrop()
 
     const newDeclined = { ...declinedTasks, [taskId]: true }
     setDeclinedTasks(newDeclined)
@@ -823,7 +876,10 @@ function App() {
         const newGlobal = { ...globalData, totalXP: newXP }
         setGlobalData(newGlobal)
         if (session) saveGlobalData(session.user.id, newGlobal, resetCount, activeCategories)
-        if (newLevel.lvl > prevLevel.lvl) setTimeout(() => setLevelUpData(newLevel), 600)
+        if (newLevel.lvl > prevLevel.lvl) {
+          sound.levelUp()
+          setTimeout(() => setLevelUpData(newLevel), 600)
+        }
       }
 
       return { ...q, daysCompleted: newDays, lastCheckin: todayStr, completed: isComplete }
@@ -922,7 +978,10 @@ function App() {
     const newGlobal = { ...globalData, totalXP: newXP }
     setGlobalData(newGlobal)
     await saveGlobalData(session.user.id, newGlobal, resetCount, activeCategories)
-    if (newLevel.lvl > prevLevel.lvl) setTimeout(() => setLevelUpData(newLevel), 600)
+    if (newLevel.lvl > prevLevel.lvl) {
+      sound.levelUp()
+      setTimeout(() => setLevelUpData(newLevel), 600)
+    }
 
     if (!shadows.find(s => s.shadow_id === dungeon.shadow_reward)) {
       const newShadow: UserShadow = {
@@ -944,6 +1003,7 @@ function App() {
   const handleAbandonDungeon = async (id: string) => {
     if (!session) return
     await failDungeon(session.user.id, id)
+    sound.honorDrop()
     const newHonor = Math.max(0, globalData.honor - 10)
     const newGlobal = { ...globalData, honor: newHonor }
     setGlobalData(newGlobal)
@@ -968,7 +1028,10 @@ function App() {
     const newGlobal = { ...globalData, totalXP: newXP }
     setGlobalData(newGlobal)
     await saveGlobalData(session.user.id, newGlobal, resetCount, activeCategories)
-    if (newLevel.lvl > prevLevel.lvl) setTimeout(() => setLevelUpData(newLevel), 600)
+    if (newLevel.lvl > prevLevel.lvl) {
+      sound.levelUp()
+      setTimeout(() => setLevelUpData(newLevel), 600)
+    }
 
     await resolveGate(session.user.id, activeGateRowId, 'entered')
 
@@ -979,6 +1042,7 @@ function App() {
   const handleIgnoreGate = async () => {
     if (!session || !activeGateRowId || !activeGate) return
 
+    sound.honorDrop()
     const newHonor = Math.max(0, globalData.honor - activeGate.honor_cost)
     const newGlobal = { ...globalData, honor: newHonor }
     setGlobalData(newGlobal)
@@ -1269,6 +1333,7 @@ function App() {
 
       <div className="actions">
         <button onClick={handleResetDay}>Reset Day</button>
+        <button onClick={() => setShowSettings(true)}>⚙ Settings</button>
         <button onClick={handleResetAll}>Reset All</button>
       </div>
 
@@ -1285,6 +1350,10 @@ function App() {
           onConfirm={handleConfirmReset}
           onCancel={() => setShowCategoryModal(false)}
         />
+      )}
+
+      {showSettings && (
+        <SettingsModal onClose={() => setShowSettings(false)} />
       )}
 
       {activeGate && (
