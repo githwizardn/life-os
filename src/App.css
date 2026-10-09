@@ -3181,3 +3181,365 @@ body {
 
   .modal-title { font-size: 20px; letter-spacing: 1.5px; }
 }
+
+/* ============================================
+   PHASE 9 — DECISION JOURNAL
+   ============================================ */
+
+.decision-section {
+  background: linear-gradient(135deg, var(--surface2) 0%, var(--surface) 100%);
+  border: 1px solid var(--border2);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.decision-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.decision-title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+
+.decision-count {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  font-weight: 700;
+}
+
+.decision-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.decision-filter-chip {
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  color: var(--text-muted);
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.decision-filter-chip:hover { background: var(--surface2); }
+.decision-filter-chip.active {
+  background: var(--surface3);
+  color: var(--text);
+  border-color: var(--gold);
+}
+
+.decision-empty {
+  text-align: center;
+  padding: 28px 12px;
+}
+
+.decision-empty-icon {
+  font-size: 42px;
+  opacity: 0.5;
+  margin-bottom: 12px;
+}
+
+.decision-empty-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  line-height: 1.6;
+}
+
+.decision-add-btn {
+  width: 100%;
+  background: var(--gold-dim);
+  border: 1px dashed var(--gold);
+  border-radius: var(--radius);
+  color: var(--gold);
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+}
+
+.decision-add-btn:hover {
+  background: var(--gold);
+  color: var(--bg);
+}
+
+.decision-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.decision-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.decision-card:hover {
+  background: var(--surface3);
+  transform: translateY(-1px);
+}
+
+.decision-card.overdue {
+  border-color: var(--danger);
+  border-left-color: var(--danger);
+  background: linear-gradient(135deg, rgba(255,51,102,0.06) 0%, var(--surface2) 100%);
+}
+
+.decision-card.resolved {
+  border-color: var(--accent);
+  border-left-color: var(--accent);
+  opacity: 0.75;
+}
+
+.decision-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.decision-card-title {
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.3px;
+  color: var(--text);
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+}
+
+.decision-card-emotion {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.decision-card-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.decision-card-confidence { color: var(--gold); }
+
+.decision-card-review {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: var(--danger);
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.decision-card-resolved {
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: var(--accent);
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+
+.decision-card-next {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--text-muted);
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  font-style: italic;
+}
+
+/* Modal */
+.decision-modal {
+  max-width: 560px;
+  max-height: 88vh;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.decision-modal-title {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+
+/* Emotion picker */
+.decision-emotion-picker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.decision-emotion-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 6px;
+  cursor: pointer;
+  font-family: 'Space Mono', monospace;
+  transition: all 0.2s;
+}
+
+.decision-emotion-opt:hover {
+  background: var(--surface3);
+  border-color: var(--border2);
+}
+
+.decision-emotion-opt.active {
+  background: var(--gold-dim);
+  border-color: var(--gold);
+}
+
+.decision-emotion-icon { font-size: 20px; }
+
+.decision-emotion-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.decision-emotion-opt.active .decision-emotion-label {
+  color: var(--gold);
+}
+
+/* Confidence slider */
+.decision-confidence-slider {
+  width: 100%;
+  margin-top: 4px;
+  accent-color: var(--gold);
+  height: 6px;
+  cursor: pointer;
+}
+
+/* Review divider */
+.decision-review-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 24px 0 6px;
+  color: var(--gold);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.decision-review-divider::before,
+.decision-review-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Locked review */
+.decision-review-locked { margin-top: 12px; }
+
+.decision-review-locked-text {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+  letter-spacing: 0.3px;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  text-align: center;
+}
+
+/* Mobile polish */
+@media (max-width: 700px) {
+  .decision-section {
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+  .decision-header { margin-bottom: 12px; padding-bottom: 10px; }
+  .decision-title { font-size: 12px; letter-spacing: 1.5px; }
+  .decision-count { font-size: 10px; }
+  .decision-filter { gap: 5px; margin-bottom: 12px; }
+  .decision-filter-chip { font-size: 9px; padding: 4px 8px; letter-spacing: 0.5px; }
+  .decision-add-btn { padding: 11px; font-size: 11px; letter-spacing: 1.5px; margin-bottom: 12px; }
+  .decision-grid { grid-template-columns: 1fr; gap: 8px; }
+  .decision-card { padding: 11px 12px; }
+  .decision-card-title { font-size: 12px; }
+  .decision-card-emotion { font-size: 16px; }
+  .decision-card-meta { font-size: 10px; }
+
+  .decision-modal {
+    top: 0;
+    left: 0;
+    transform: none;
+    max-width: 100%;
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border: none;
+    border-top: 2px solid var(--gold);
+    padding: 20px 16px 110px;
+    text-align: left;
+  }
+  .decision-modal-title {
+    font-size: 13px;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+  }
+  .decision-emotion-picker { gap: 5px; }
+  .decision-emotion-opt { padding: 9px 4px; }
+  .decision-emotion-icon { font-size: 18px; }
+  .decision-emotion-label { font-size: 8px; }
+  .decision-review-divider { margin: 20px 0 4px; font-size: 9px; }
+  .decision-confidence-slider { height: 8px; }
+}
+
+@media (max-width: 380px) {
+  .decision-emotion-picker { grid-template-columns: repeat(2, 1fr); }
+  .decision-filter-chip { font-size: 8px; padding: 3px 7px; }
+}
