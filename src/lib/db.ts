@@ -583,3 +583,64 @@ export async function deleteRelationship(userId: string, id: string) {
     .eq('user_id', userId)
   if (error) throw error
 }
+
+// ===== PHASE 9 — DECISIONS =====
+
+export async function loadDecisions(userId: string) {
+  const { data, error } = await supabase
+    .from('decisions')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data || []
+}
+
+export async function saveDecision(
+  userId: string,
+  decision: {
+    id?: string
+    title: string
+    context: string
+    options: string
+    chosen: string
+    reasoning: string
+    emotion: string
+    expected_outcome: string
+    confidence: number
+    outcome_1w: string
+    outcome_1m: string
+    outcome_1y: string
+    status: string
+  }
+) {
+  if (decision.id) {
+    const { error } = await supabase
+      .from('decisions')
+      .update({ ...decision, updated_at: new Date().toISOString() })
+      .eq('id', decision.id)
+      .eq('user_id', userId)
+    if (error) {
+      console.error('saveDecision UPDATE error:', error)
+      throw error
+    }
+  } else {
+    const { error } = await supabase
+      .from('decisions')
+      .insert({ user_id: userId, ...decision })
+    if (error) {
+      console.error('saveDecision INSERT error:', error)
+      throw error
+    }
+  }
+}
+
+export async function deleteDecision(userId: string, id: string) {
+  const { error } = await supabase
+    .from('decisions')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', userId)
+  if (error) throw error
+}

@@ -26,7 +26,9 @@ import Chronicle from './components/Chronicle'
 import type { ChronicleEntry } from './components/Chronicle'
 import RelationshipCRM from './components/RelationshipCRM'
 import ReachOutWidget from './components/ReachOutWidget'
+import DecisionJournal from './components/DecisionJournal'
 import { type Relationship } from './lib/relationships'
+import { type Decision } from './lib/decisions'
 import { determineShadowFromLegendary, type UserShadow } from './lib/shadows'
 import { type UserDungeon, isExpired } from './lib/dungeons'
 import { getDungeonById } from './data/dungeons'
@@ -76,6 +78,9 @@ import {
   saveRelationship,
   markContacted,
   deleteRelationship,
+  loadDecisions,
+  saveDecision,
+  deleteDecision,
 } from './lib/db'
 import {
   applyHonorAction,
@@ -217,6 +222,7 @@ function App() {
   const [bossReqs, setBossReqs] = useState<BossRequirementStatus[]>([])
   const [chronicles, setChronicles] = useState<ChronicleEntry[]>([])
   const [relationships, setRelationships] = useState<Relationship[]>([])
+  const [decisions, setDecisions] = useState<Decision[]>([])
   const gateCheckedRef = useRef<string>('')
 
   // ============================================
@@ -416,6 +422,10 @@ function App() {
         // ---- Relationships ----
         const relationshipsData = await loadRelationships(userId)
         setRelationships(relationshipsData as Relationship[])
+
+        // ---- Decisions ----
+        const decisionsData = await loadDecisions(userId)
+        setDecisions(decisionsData as Decision[])
 
         // ---- Gates (load any pending) ----
         const pendingGate = await loadPendingGate(userId)
@@ -949,7 +959,7 @@ function App() {
   // RELATIONSHIP HANDLERS
   // ============================================
 
-    const handleSaveRelationship = async (
+  const handleSaveRelationship = async (
     person: Omit<Relationship, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'last_contact_at'> & { id?: string }
   ): Promise<boolean> => {
     if (!session) return false
@@ -976,6 +986,31 @@ function App() {
     if (!session) return
     await deleteRelationship(session.user.id, id)
     setRelationships(prev => prev.filter(p => p.id !== id))
+  }
+
+  // ============================================
+  // DECISION HANDLERS
+  // ============================================
+
+  const handleSaveDecision = async (
+    decision: Omit<Decision, 'id' | 'user_id' | 'created_at' | 'updated_at'> & { id?: string }
+  ): Promise<boolean> => {
+    if (!session) return false
+    try {
+      await saveDecision(session.user.id, decision)
+      const fresh = await loadDecisions(session.user.id)
+      setDecisions(fresh as Decision[])
+      return true
+    } catch (err) {
+      console.error('Failed to save decision:', err)
+      return false
+    }
+  }
+
+  const handleDeleteDecision = async (id: string) => {
+    if (!session) return
+    await deleteDecision(session.user.id, id)
+    setDecisions(prev => prev.filter(d => d.id !== id))
   }
 
   // ============================================
@@ -1065,6 +1100,12 @@ function App() {
       <ScoreCards tasks={tasks} taskState={taskState} />
 
       <Chronicle entries={chronicles} />
+
+      <DecisionJournal
+        decisions={decisions}
+        onSave={handleSaveDecision}
+        onDelete={handleDeleteDecision}
+      />
 
       {relationships.length > 0 && (
         <ReachOutWidget
