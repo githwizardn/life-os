@@ -949,14 +949,19 @@ function App() {
   // RELATIONSHIP HANDLERS
   // ============================================
 
-  const handleSaveRelationship = async (
+    const handleSaveRelationship = async (
     person: Omit<Relationship, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'last_contact_at'> & { id?: string }
-  ) => {
-    if (!session) return
-    await saveRelationship(session.user.id, person)
-
-    const fresh = await loadRelationships(session.user.id)
-    setRelationships(fresh as Relationship[])
+  ): Promise<boolean> => {
+    if (!session) return false
+    try {
+      await saveRelationship(session.user.id, person)
+      const fresh = await loadRelationships(session.user.id)
+      setRelationships(fresh as Relationship[])
+      return true
+    } catch (err) {
+      console.error('Failed to save relationship:', err)
+      return false
+    }
   }
 
   const handleMarkContacted = async (id: string) => {

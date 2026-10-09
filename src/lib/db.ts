@@ -543,19 +543,23 @@ export async function saveRelationship(
   }
 ) {
   if (person.id) {
-    // Update
     const { error } = await supabase
       .from('relationships')
       .update({ ...person, updated_at: new Date().toISOString() })
       .eq('id', person.id)
       .eq('user_id', userId)
-    if (error) throw error
+    if (error) {
+      console.error('saveRelationship UPDATE error:', error)
+      throw error
+    }
   } else {
-    // Insert
     const { error } = await supabase
       .from('relationships')
       .insert({ user_id: userId, ...person })
-    if (error) throw error
+    if (error) {
+      console.error('saveRelationship INSERT error:', error)
+      throw error
+    }
   }
 }
 

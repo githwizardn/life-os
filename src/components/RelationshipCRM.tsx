@@ -11,7 +11,7 @@ import {
 
 type Props = {
   people: Relationship[]
-  onSave: (person: Omit<Relationship, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'last_contact_at'> & { id?: string }) => void
+  onSave: (person: Omit<Relationship, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'last_contact_at'> & { id?: string }) => Promise<boolean>
   onMarkContacted: (id: string) => void
   onDelete: (id: string) => void
 }
@@ -23,7 +23,6 @@ function RelationshipCRM({ people, onSave, onMarkContacted, onDelete }: Props) {
 
   const counts = getTierCounts(people)
 
-  // Sort: overdue first, then by urgency, then by name
   const sorted = [...people].sort((a, b) => {
     const ua = getUrgencyScore(a)
     const ub = getUrgencyScore(b)
@@ -40,7 +39,6 @@ function RelationshipCRM({ people, onSave, onMarkContacted, onDelete }: Props) {
         <span className="rel-count">{people.length} tracked</span>
       </div>
 
-      {/* Tier filter row */}
       <div className="rel-tier-filter">
         <button
           className={`rel-tier-chip ${tierFilter === null ? 'active' : ''}`}
@@ -60,7 +58,6 @@ function RelationshipCRM({ people, onSave, onMarkContacted, onDelete }: Props) {
         ))}
       </div>
 
-      {/* Empty state */}
       {people.length === 0 && (
         <div className="rel-empty">
           <div className="rel-empty-icon">👥</div>
@@ -70,12 +67,10 @@ function RelationshipCRM({ people, onSave, onMarkContacted, onDelete }: Props) {
         </div>
       )}
 
-      {/* Add button */}
       <button className="rel-add-btn" onClick={() => setCreating(true)}>
         + ADD PERSON
       </button>
 
-      {/* People list */}
       <div className="rel-grid">
         {filtered.map(person => {
           const tier = getTierInfo(person.tier)
@@ -115,7 +110,6 @@ function RelationshipCRM({ people, onSave, onMarkContacted, onDelete }: Props) {
                 <div className="rel-card-facts">{person.key_facts}</div>
               )}
 
-              {/* Quick contact mark */}
               <button
                 className="rel-card-contact-btn"
                 onClick={e => {
@@ -131,15 +125,10 @@ function RelationshipCRM({ people, onSave, onMarkContacted, onDelete }: Props) {
         })}
       </div>
 
-      {/* Create/Edit modal */}
       {(editing || creating) && (
         <PersonModal
           person={editing}
-          onSave={(data) => {
-            onSave(data)
-            setEditing(null)
-            setCreating(false)
-          }}
+          onSave={onSave}
           onDelete={editing ? () => {
             if (confirm(`Delete ${editing.name}?`)) {
               onDelete(editing.id)
@@ -162,9 +151,32 @@ function RelationshipCRM({ people, onSave, onMarkContacted, onDelete }: Props) {
 
 type ModalProps = {
   person: Relationship | null
-  onSave: (data: Omit<Relationship, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'last_contact_at'> & { id?: string }) => void
+  onSave: (data: Omit<Relationship, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'last_contact_at'> & { id?: string }) => Promise<boolean>
   onDelete?: () => void
   onClose: () => void
+}
+
+// ============================================
+// BIRTHDAY VALIDATION (MM-DD)
+// ============================================
+
+function validateBirthday(value: string): string | null {
+  if (!value) return null
+  if (value.length !== 5 || value[2] !== '-') {
+    return 'Use DD-MM format (e.g. 15-04)'
+  }
+  const d = parseInt(value.slice(0, 2), 10)
+  const m = parseInt(value.slice(3, 5), 10)
+  if (isNaN(d) || d < 1 || d > 31) return 'Day must be 01–31'
+  if (isNaN(m) || m < 1 || m > 12) return 'Month must be 01–12'
+
+  // Real calendar check (day exists in that month)
+  const daysInMonth = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  if (d > daysInMonth[m - 1]) {
+    return `Month ${String(m).padStart(2, '0')} has only ${daysInMonth[m - 1]} days`
+  }
+
+  return null
 }
 
 function PersonModal({ person, onSave, onDelete, onClose }: ModalProps) {
@@ -182,9 +194,25 @@ function PersonModal({ person, onSave, onDelete, onClose }: ModalProps) {
   const [theirWins, setTheirWins] = useState(person?.their_wins || '')
   const [sharedHistory, setSharedHistory] = useState(person?.shared_history || '')
 
-  const handleSave = () => {
-    if (!name.trim()) return
-    onSave({
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const birthdayError = validateBirthday(birthday)
+
+  const handleSave = async () => {
+    setError(null)
+
+    if (!name.trim()) {
+      setError('Name is required.')
+      return
+    }
+    if (birthdayError) {
+      setError(birthdayError)
+      return
+    }
+
+    setSaving(true)
+    const ok = await onSave({
       id: person?.id,
       name: name.trim(),
       emoji,
@@ -200,17 +228,23 @@ function PersonModal({ person, onSave, onDelete, onClose }: ModalProps) {
       their_wins: theirWins,
       shared_history: sharedHistory,
     })
+    setSaving(false)
+
+    if (ok) {
+      onClose()
+    } else {
+      setError('Save failed. Check the browser console for details.')
+    }
   }
 
   return (
     <>
-      <div className="modal-overlay" onClick={onClose} />
+      <div className="modal-overlay" onClick={saving ? undefined : onClose} />
       <div className="modal rel-modal">
         <div className="rel-modal-title">
           {person ? 'EDIT DOSSIER' : 'NEW DOSSIER'}
         </div>
 
-        {/* Identity row */}
         <div className="rel-form-row">
           <div className="rel-emoji-picker">
             <div className="rel-emoji-display">{emoji}</div>
@@ -253,12 +287,12 @@ function PersonModal({ person, onSave, onDelete, onClose }: ModalProps) {
 
         <div className="rel-form-row-2">
           <div>
-            <label className="rel-label">BIRTHDAY (MM-DD)</label>
+                        <label className="rel-label">BIRTHDAY (DD-MM)</label>
             <input
-              className="rel-input"
+              className={`rel-input ${birthdayError ? 'rel-input-error' : ''}`}
               type="text"
               inputMode="numeric"
-              placeholder="04-15"
+              placeholder="15-04"
               maxLength={5}
               value={birthday}
               onChange={e => {
@@ -268,6 +302,9 @@ function PersonModal({ person, onSave, onDelete, onClose }: ModalProps) {
                 setBirthday(v)
               }}
             />
+            {birthdayError && (
+              <div className="rel-field-error">{birthdayError}</div>
+            )}
           </div>
           <div>
             <label className="rel-label">CONTACT EVERY (DAYS)</label>
@@ -353,15 +390,29 @@ function PersonModal({ person, onSave, onDelete, onClose }: ModalProps) {
           rows={3}
         />
 
+        {error && <div className="rel-modal-error">{error}</div>}
+
         <div className="rel-modal-actions">
-          <button className="rel-save-btn" onClick={handleSave}>
-            {person ? 'SAVE' : 'CREATE'}
+          <button
+            className="rel-save-btn"
+            onClick={handleSave}
+            disabled={saving || !!birthdayError}
+          >
+            {saving ? 'SAVING…' : (person ? 'SAVE' : 'CREATE')}
           </button>
-          <button className="rel-cancel-btn" onClick={onClose}>
+          <button
+            className="rel-cancel-btn"
+            onClick={onClose}
+            disabled={saving}
+          >
             CANCEL
           </button>
           {onDelete && (
-            <button className="rel-delete-btn" onClick={onDelete}>
+            <button
+              className="rel-delete-btn"
+              onClick={onDelete}
+              disabled={saving}
+            >
               DELETE
             </button>
           )}
