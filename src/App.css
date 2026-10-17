@@ -4795,3 +4795,48 @@ button:focus-visible {
     display: none;
   }
 }
+
+
+
+/* Mobile Settings Floating Button */
+.mobile-settings-btn {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .mobile-settings-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    bottom: calc(80px + env(safe-area-inset-bottom)); /* ჩამოვწიეთ ქვემოთ, მენიუს ზემოთ */
+    right: 16px;
+    top: auto; /* გავაუქმეთ ზედა პოზიცია */
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-mid);
+    font-size: 22px;
+    z-index: 100;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  }
+  
+  .mobile-settings-btn:hover,
+  .mobile-settings-btn:active {
+    background: var(--surface3);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  /* Ascent-ზე სტატისტიკის ბლოკები ერთ სვეტად დავაწყოთ მობილურზე */
+  .core-bento {
+    grid-template-columns: 1fr;
+  }
+  .core-side {
+    flex-direction: column;
+  }
+}

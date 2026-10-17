@@ -1,7 +1,3 @@
-// ============================================
-// SIDEBAR — desktop-only left navigation
-// ============================================
-
 import { CoreIcon, AscentIcon, VesselIcon, CircleIcon, RecordIcon } from './NavIcon'
 
 export type TabId = 'core' | 'ascent' | 'vessel' | 'circle' | 'record'
@@ -9,6 +5,7 @@ export type TabId = 'core' | 'ascent' | 'vessel' | 'circle' | 'record'
 type Props = {
   active: TabId
   onChange: (tab: TabId) => void
+  onOpenSettings: () => void
 }
 
 const TABS: { id: TabId; label: string; Icon: typeof CoreIcon }[] = [
@@ -19,7 +16,7 @@ const TABS: { id: TabId; label: string; Icon: typeof CoreIcon }[] = [
   { id: 'record', label: 'Record', Icon: RecordIcon },
 ]
 
-function Sidebar({ active, onChange }: Props) {
+function Sidebar({ active, onChange, onOpenSettings }: Props) {
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
@@ -45,8 +42,29 @@ function Sidebar({ active, onChange }: Props) {
         })}
       </nav>
 
-      <div className="sidebar-footer">
-        <span className="sidebar-version">PHASE 12</span>
+      <div className="sidebar-footer" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <button
+          onClick={onOpenSettings}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: 'var(--text-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            padding: '0',
+            textAlign: 'left',
+            transition: 'color 0.2s'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.color = 'var(--text)'}
+          onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+        >
+          <span>⚙</span> Settings
+        </button>
+        <span className="sidebar-version">PHASE 13</span>
       </div>
     </aside>
   )

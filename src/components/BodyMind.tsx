@@ -32,7 +32,7 @@ function BodyMind(props: Props) {
   return (
     <div className="bm-section">
       <div className="bm-header">
-        <span className="bm-title">💪 BODY & MIND</span>
+        <span className="bm-title">📊 LIFE LOGS</span>
       </div>
 
       <div className="bm-tabs">

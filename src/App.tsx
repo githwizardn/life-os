@@ -261,7 +261,7 @@ function App() {
   const gateCheckedRef = useRef<string>('')
 
   // ============================================
-  // SOUND INIT (respect saved preference)
+  // SOUND INIT
   // ============================================
 
   useEffect(() => {
@@ -958,14 +958,6 @@ function App() {
     }
   }
 
-  const handleResetAll = () => {
-    if (confirm('Reset EVERYTHING? This cannot be undone.')) {
-      if (session) supabase.auth.signOut()
-      localStorage.clear()
-      window.location.reload()
-    }
-  }
-
   // ============================================
   // DUNGEON HANDLERS
   // ============================================
@@ -1238,19 +1230,27 @@ function App() {
  
   return (
     <>
-      <Sidebar active={activeTab} onChange={setActiveTab} />
+      <Sidebar active={activeTab} onChange={setActiveTab} onOpenSettings={() => setShowSettings(true)} />
       <BottomNav active={activeTab} onChange={setActiveTab} />
 
       <div className="app">
         <div className="bg-glow" />
+
+        {/* Mobile Settings Floating Button */}
+        <button 
+          className="mobile-settings-btn"
+          onClick={() => setShowSettings(true)}
+          aria-label="Settings"
+        >
+          ⚙
+        </button>
 
         {/* ---------- ALWAYS VISIBLE ---------- */}
         <Header user={user} />
         <XPBar globalData={globalData} getLevelData={getLevelData} />
         <HonorBar honor={globalData.honor} />
 
-
-                <button
+        <button
           type="button"
           className="palette-bar"
           onClick={() => setShowPalette(true)}
@@ -1261,8 +1261,7 @@ function App() {
           <span className="palette-bar-key">Ctrl K</span>
         </button>
 
-        
-                {/* ---------- CORE ---------- */}
+        {/* ---------- CORE ---------- */}
         {activeTab === 'core' && (
           <div className="tab-content">
 
@@ -1274,47 +1273,85 @@ function App() {
               />
             )}
 
-            <div className="core-bento">
-              <div className="core-main">
-                <SystemVoice
-                  userId={session.user.id}
-                  state={{
-                    honor: globalData.honor,
-                    streak: globalData.streak,
-                    completedToday: Object.values(taskState).filter(Boolean).length,
-                    totalToday: tasks.length,
-                    hour: new Date().getHours(),
-                    daysIntoSeason: userSeason
-                      ? Math.floor((Date.now() - new Date(userSeason.started_at).getTime()) / (1000 * 60 * 60 * 24))
-                      : 0,
-                    hasRecentWin: false,
-                  }}
-                />
+            <SystemVoice
+              userId={session.user.id}
+              state={{
+                honor: globalData.honor,
+                streak: globalData.streak,
+                completedToday: Object.values(taskState).filter(Boolean).length,
+                totalToday: tasks.length,
+                hour: new Date().getHours(),
+                daysIntoSeason: userSeason
+                  ? Math.floor((Date.now() - new Date(userSeason.started_at).getTime()) / (1000 * 60 * 60 * 24))
+                  : 0,
+                hasRecentWin: false,
+              }}
+            />
 
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch', marginBottom: '14px' }}>
+              <div style={{ flex: 1 }}>
                 <DayProgress />
-
-                <TaskList
-                  tasks={tasks}
-                  taskState={taskState}
-                  declinedTasks={declinedTasks}
-                  onToggle={handleToggle}
-                  onTrack={handleTrackQuest}
-                  onDecline={handleDecline}
-                />
-
-                {quests.filter(q => !q.completed).length > 0 && (
-                  <QuestTracker
-                    quests={quests.filter(q => !q.completed)}
-                    onCheckin={handleQuestCheckin}
-                    onAbandon={handleAbandonQuest}
-                  />
-                )}
               </div>
+              <button 
+                onClick={handleResetDay}
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius)',
+                  color: 'var(--accent)',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  padding: '0 20px',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--accent)'}
+                onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--border)'}
+              >
+                ↺ RESET DAY
+              </button>
+            </div>
 
+            <TaskList
+              tasks={tasks}
+              taskState={taskState}
+              declinedTasks={declinedTasks}
+              onToggle={handleToggle}
+              onTrack={handleTrackQuest}
+              onDecline={handleDecline}
+            />
+
+            {quests.filter(q => !q.completed).length > 0 && (
+              <QuestTracker
+                quests={quests.filter(q => !q.completed)}
+                onCheckin={handleQuestCheckin}
+                onAbandon={handleAbandonQuest}
+              />
+            )}
+          </div>
+        )}
+
+        {/* ---------- ASCENT ---------- */}
+        {activeTab === 'ascent' && (
+          <div className="tab-content">
+            {userSeason && (
+              <SeasonBanner
+                season={getSeasonByNumber(userSeason.season_num)}
+                userSeason={userSeason}
+                requirements={bossReqs}
+                bossDefeated={userSeason.boss_defeated}
+              />
+            )}
+
+            {/* Stats moved here */}
+            <div className="core-bento" style={{ marginTop: '20px', marginBottom: '20px' }}>
+              <div className="core-main">
+                 <ScoreCards tasks={tasks} taskState={taskState} />
+              </div>
               <aside className="core-side">
                 <div className="stats-mini">
                   <div className="stats-mini-header">AT A GLANCE</div>
-
                   <div className="stats-mini-item">
                     <span className="stats-mini-value">{skillProgress.length}</span>
                     <span className="stats-mini-label">Skills</span>
@@ -1369,22 +1406,6 @@ function App() {
               </aside>
             </div>
 
-            <ScoreCards tasks={tasks} taskState={taskState} />
-          </div>
-        )}
-
-        {/* ---------- ASCENT ---------- */}
-        {activeTab === 'ascent' && (
-          <div className="tab-content">
-            {userSeason && (
-              <SeasonBanner
-                season={getSeasonByNumber(userSeason.season_num)}
-                userSeason={userSeason}
-                requirements={bossReqs}
-                bossDefeated={userSeason.boss_defeated}
-              />
-            )}
-
             <SkillTree
               categoryXP={categoryXP}
               honor={globalData.honor}
@@ -1425,16 +1446,6 @@ function App() {
               onSaveFinance={handleSaveFinance}
               onDeleteFinance={handleDeleteFinance}
             />
-
-            <Chronicle entries={chronicles} />
-
-            <Notes
-              notes={notes}
-              setNotes={handleSetNotes}
-              onSave={handleSaveNotes}
-              onDeleteHistory={handleDeleteHistory}
-              history={notesHistory}
-            />
           </div>
         )}
 
@@ -1450,9 +1461,19 @@ function App() {
           </div>
         )}
 
-        {/* ---------- RECORD ---------- */}
+        {/* ---------- RECORD (JOURNAL) ---------- */}
         {activeTab === 'record' && (
           <div className="tab-content">
+            <Notes
+              notes={notes}
+              setNotes={handleSetNotes}
+              onSave={handleSaveNotes}
+              onDeleteHistory={handleDeleteHistory}
+              history={notesHistory}
+            />
+
+            <Chronicle entries={chronicles} />
+
             <DecisionJournal
               decisions={decisions}
               onSave={handleSaveDecision}
@@ -1460,13 +1481,6 @@ function App() {
             />
           </div>
         )}
-
-        {/* ---------- FOOTER ACTIONS ---------- */}
-        <div className="actions">
-          <button onClick={handleResetDay}>Reset Day</button>
-          <button onClick={() => setShowSettings(true)}>⚙ Settings</button>
-          <button onClick={handleResetAll}>Reset All</button>
-        </div>
 
         {/* ---------- FLOATING / MODALS ---------- */}
         {levelUpData && (
@@ -1485,7 +1499,11 @@ function App() {
         )}
 
         {showSettings && (
-          <SettingsModal onClose={() => setShowSettings(false)} />
+          <SettingsModal 
+            onClose={() => setShowSettings(false)} 
+            userId={session.user.id}
+            onDataChange={() => window.location.reload()}
+          />
         )}
 
         {activeGate && (
@@ -1495,7 +1513,7 @@ function App() {
             onIgnore={handleIgnoreGate}
           />
         )}
-                {showPalette && (
+        {showPalette && (
           <CommandPalette
             open={showPalette}
             onClose={() => setShowPalette(false)}
