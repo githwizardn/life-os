@@ -1228,22 +1228,22 @@ function App() {
   // MAIN RENDER
   // ============================================
  
-  return (
+    return (
     <>
       <Sidebar active={activeTab} onChange={setActiveTab} onOpenSettings={() => setShowSettings(true)} />
       <BottomNav active={activeTab} onChange={setActiveTab} />
 
+      {/* Mobile Settings Floating Button */}
+      <button 
+        className="mobile-settings-btn"
+        onClick={() => setShowSettings(true)}
+        aria-label="Settings"
+      >
+        ⚙
+      </button>
+
       <div className="app">
         <div className="bg-glow" />
-
-        {/* Mobile Settings Floating Button */}
-        <button 
-          className="mobile-settings-btn"
-          onClick={() => setShowSettings(true)}
-          aria-label="Settings"
-        >
-          ⚙
-        </button>
 
         {/* ---------- ALWAYS VISIBLE ---------- */}
         <Header user={user} />
@@ -1264,7 +1264,6 @@ function App() {
         {/* ---------- CORE ---------- */}
         {activeTab === 'core' && (
           <div className="tab-content">
-
             {relationships.length > 0 && (
               <ReachOutWidget
                 people={relationships}
@@ -1344,7 +1343,6 @@ function App() {
               />
             )}
 
-            {/* Stats moved here */}
             <div className="core-bento" style={{ marginTop: '20px', marginBottom: '20px' }}>
               <div className="core-main">
                  <ScoreCards tasks={tasks} taskState={taskState} />
@@ -1406,14 +1404,8 @@ function App() {
               </aside>
             </div>
 
-            <SkillTree
-              categoryXP={categoryXP}
-              honor={globalData.honor}
-              progress={skillProgress}
-            />
-
+            <SkillTree categoryXP={categoryXP} honor={globalData.honor} progress={skillProgress} />
             <ShadowArmy shadows={shadows} />
-
             <DungeonList
               activeDungeons={activeDungeons}
               categoryXP={categoryXP}
@@ -1471,9 +1463,7 @@ function App() {
               onDeleteHistory={handleDeleteHistory}
               history={notesHistory}
             />
-
             <Chronicle entries={chronicles} />
-
             <DecisionJournal
               decisions={decisions}
               onSave={handleSaveDecision}
@@ -1481,52 +1471,53 @@ function App() {
             />
           </div>
         )}
+      </div> {/* <--- .app სრულდება აქ */}
 
-        {/* ---------- FLOATING / MODALS ---------- */}
-        {levelUpData && (
-          <LevelUpModal
-            level={levelUpData}
-            onClose={() => setLevelUpData(null)}
-          />
-        )}
+      {/* ---------- MODALS (გატანილია .app-ის გარეთ) ---------- */}
+      {levelUpData && (
+        <LevelUpModal
+          level={levelUpData}
+          onClose={() => setLevelUpData(null)}
+        />
+      )}
 
-        {showCategoryModal && (
-          <CategorySelectModal
-            current={activeCategories.length > 0 ? activeCategories : user.goals}
-            onConfirm={handleConfirmReset}
-            onCancel={() => setShowCategoryModal(false)}
-          />
-        )}
+      {showCategoryModal && (
+        <CategorySelectModal
+          current={activeCategories.length > 0 ? activeCategories : user.goals}
+          onConfirm={handleConfirmReset}
+          onCancel={() => setShowCategoryModal(false)}
+        />
+      )}
 
-        {showSettings && (
-          <SettingsModal 
-            onClose={() => setShowSettings(false)} 
-            userId={session.user.id}
-            onDataChange={() => window.location.reload()}
-          />
-        )}
+      {showSettings && (
+        <SettingsModal 
+          onClose={() => setShowSettings(false)} 
+          userId={session.user.id}
+          onDataChange={() => window.location.reload()}
+        />
+      )}
 
-        {activeGate && (
-          <GateModal
-            gate={activeGate}
-            onEnter={handleEnterGate}
-            onIgnore={handleIgnoreGate}
-          />
-        )}
-        {showPalette && (
-          <CommandPalette
-            open={showPalette}
-            onClose={() => setShowPalette(false)}
-            onNavigate={setActiveTab}
-            tasks={tasks}
-            quests={quests}
-            relationships={relationships}
-            decisions={decisions}
-            readingLogs={readingLogs}
-            notes={notes}
-          />
-        )}
-      </div>
+      {activeGate && (
+        <GateModal
+          gate={activeGate}
+          onEnter={handleEnterGate}
+          onIgnore={handleIgnoreGate}
+        />
+      )}
+      
+      {showPalette && (
+        <CommandPalette
+          open={showPalette}
+          onClose={() => setShowPalette(false)}
+          onNavigate={setActiveTab}
+          tasks={tasks}
+          quests={quests}
+          relationships={relationships}
+          decisions={decisions}
+          readingLogs={readingLogs}
+          notes={notes}
+        />
+      )}
     </>
   )
 }

@@ -4109,7 +4109,7 @@ button:focus-visible {
     border-radius: 0;
     border: none;
     border-top: 2px solid var(--accent);
-    padding: 20px 16px 40px;
+    padding: 20px 16px calc(100px + env(safe-area-inset-bottom));
     text-align: left;
     overflow-y: auto;
   }
