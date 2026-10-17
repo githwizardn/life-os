@@ -72,7 +72,7 @@ life-os/
 │   ├── data/                  # static definitions (tasks, skills, shadows, etc.)
 │   ├── lib/                   # logic + Supabase calls
 │   │   ├── supabase.ts        # client
-│   │   ├── db.ts              # all queries
+│   │   ├── db.ts              # all queries + export/import/wipe
 │   │   ├── honor.ts           # HONOR math
 │   │   ├── skills.ts          # unlock rules
 │   │   ├── shadows.ts         # extraction rules
@@ -130,6 +130,13 @@ Every table has RLS enabled and is scoped to `auth.uid()`.
 
 - **Single big `App.tsx`.** All global state, all handlers, all layout live in one file. Sections are extracted into components but receive state and callbacks as props. No context, no state library.
 - **Hybrid persistence.** State is mirrored to localStorage on every change (`useLocalStorage` hook) and synced to Supabase asynchronously. If Supabase fails, UI stays responsive; next successful call reconciles.
+- **Tab Routing & UI Layout.** 
+  - **Core:** Daily execution (Tasks, Quests, Reset Day, System Voice).
+  - **Ascent:** Progression & Stats (Season, Skills, Shadows, Dungeons, ScoreCards).
+  - **Vessel:** Health & Wealth (Life Logs: Sleep, Workout, Measure, Reading, Finance).
+  - **Circle:** Relationship CRM.
+  - **Record:** Reflection (Notes, Chronicle, Decision Journal).
+- **Data Management.** Full JSON backup & restore system. Users can export all data, import from a previous file (with `REPLACE` confirmation), reset specific systems (XP, Dungeons, etc.), or completely wipe their account data.
 - **Deterministic randomness.** Gate appearances use a seeded PRNG on `userId + hour`. Same user, same hour = same gate. No `Math.random()` in gameplay paths.
 - **Service worker.** Caches the app shell (`/`, `/index.html`, manifest, icons). Never caches Supabase or cross-origin requests. Network-first for HTML navigation, cache-first for static assets.
 - **Notifications.** Deduped per day via localStorage. Mute toggle in Settings so you can silence without revoking browser permission.
@@ -165,9 +172,10 @@ git push origin main
 | 7 | ✅ | Chronicles |
 | 8 | ✅ | Relationship Dossier |
 | 9 | ✅ | Decision Journal |
-| 10 | ✅ | Body & Mind |
+| 10 | ✅ | Body & Mind (now Life Logs) |
 | 11 | ✅ | PWA, notifications, sound, a11y |
-| 12 | ⏳ | Data & Settings (search, export, import) |
+| 12 | ✅ | Navigation Restructure (Core/Ascent/Vessel/Circle/Record) |
+| 13 | ✅ | Data Management (Export/Import/Wipe) & UI Polish |
 
 ---
 
